@@ -19,17 +19,17 @@ def _space2ras(space):
     positive= space.split('-')
 
     xfrm=[ ]
-    if positive[0] is 'left':
+    if positive[0] == 'left':
         xfrm.append(-1)
     else:
         xfrm.append(1)
 
-    if positive[1] is 'posterior':
+    if positive[1] == 'posterior':
         xfrm.append(-1)
     else:
         xfrm.append(1)
 
-    if positive[2] is 'inferior':
+    if positive[2] == 'inferior':
         xfrm.append(-1)
     else:
         xfrm.append(1)
