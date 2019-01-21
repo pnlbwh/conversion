@@ -10,7 +10,7 @@ with warnings.catch_warnings():
     import nibabel as nib
 
 PRECISION= 17
-np.set_printoptions(precision= PRECISION)
+np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
 
 
 def _space2ras(space):

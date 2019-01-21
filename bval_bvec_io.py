@@ -1,4 +1,6 @@
 import numpy as np
+PRECISION= 17
+np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
 
 def read_bvecs(bvec_file):
 
@@ -11,7 +13,12 @@ def read_bvecs(bvec_file):
         bvecs = tranpose(bvecs)
 
     # normalize the bvecs (in case they are not)
-    bvecs/= np.linalg.norm(bvecs, axis= 1).reshape(len(bvecs), 1)
+    for i in range(len(bvecs)):
+        L_2 = np.linalg.norm(bvecs[i])
+        if L_2:
+            bvecs[i]/= L_2
+        else:
+            bvecs[i]= [0, 0, 0]
 
     return bvecs
 

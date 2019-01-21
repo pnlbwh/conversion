@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import numpy as np
-from numpy.linalg import norm, inv
 import argparse
 import os, warnings, sys
 with warnings.catch_warnings():
@@ -9,49 +8,9 @@ with warnings.catch_warnings():
     import nibabel as nib
 
 PRECISION= 17
-np.set_printoptions(precision= PRECISION)
+np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
 
-
-def read_bvecs(bvec_file):
-
-    with open(bvec_file, 'r') as f:
-        bvecs = [[float(num) for num in line.split()] for line in f.read().split('\n') if line]
-
-    # bvec_file can be 3xN or Nx3
-    # we want to return as Nx3
-    if len(bvecs) == 3:
-        bvecs = tranpose(bvecs)
-
-    return bvecs
-
-
-def read_bvals(bval_file):
-
-    with open(bval_file, 'r') as f:
-        bvals = [float(num) for num in f.read().split()]
-
-    # bval_file can be 1 line or N lines
-    return bvals
-
-def tranpose(bvecs):
-
-    # bvecs_T = matrix(list(map(list, zip(*bvecs))))
-    bvecs_T = list(map(list, zip(*bvecs)))
-
-    return bvecs_T
-
-def bvec_scaling(bval, bvec, b_max):
-    
-    if bval:
-        factor= np.sqrt(bval/b_max)
-        if norm(bvec)!=factor:
-            bvec= np.array(bvec)*factor
-
-    # bvec= [str(np.round(x, precision)) for x in bvec]
-    bvec= [str(x) for x in bvec]
-
-    return ('   ').join(bvec)
-
+from bval_bvec_io import read_bvecs, read_bvals, bvec_scaling
 
 def matrix_string(A):
     # A= np.array(A)
@@ -61,6 +20,14 @@ def matrix_string(A):
     A= A.replace('],[',') (')
     return '('+A[2:-2]+')'
     
+def find_mf(F):
+
+    FFT= F @ F.T
+    U, S, V= np.linalg.svd(FFT)
+    FFTsqrt= U @ np.diag(np.sqrt(S)) @ V
+    R= FFTsqrt @ F
+
+    return R.T
 
 def main():
 
@@ -117,7 +84,7 @@ type: {np_to_nrrd[dtype.name]}\ndimension: {dim}\nspace: right-anterior-superior
     sizes= hdr['dim'][1:dim+1]
     print('sizes: {}'.format((' ').join(str(x) for x in sizes)))
 
-    spc_dir= hdr.get_qform()[0:3,0:3].T
+    spc_dir= hdr.get_qform()[0:3,0:3]
 
     # most important key
     print('byteskip: -1')
@@ -130,25 +97,19 @@ type: {np_to_nrrd[dtype.name]}\ndimension: {dim}\nspace: right-anterior-superior
     spc_orig= hdr.get_qform()[0:3,3]
     print('space origin: ({})'.format((',').join(str(x) for x in spc_orig)))
 
-    print('data file: ', args.nifti)
 
     if dim==4:
-        print(f'space directions: {matrix_string(spc_dir)} none')
+        print(f'space directions: {matrix_string(spc_dir.T)} none')
         print('centerings: cell cell cell ???')
         print('kinds: space space space list')
 
-        affine_det= np.linalg.det(hdr.get_qform())
-        if affine_det < 0:
-            mf = np.eye(3, dtype= 'int')
-        elif affine_det > 0:
-            mf = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype= 'int')
-
-        # mf = spc_dir @ inv(np.diag(hdr['pixdim'][1:4]))
+        mf = find_mf(spc_dir)
         print(f'measurement frame: {matrix_string(mf)}')
 
         bvecs = read_bvecs(args.bvec)
         bvals = read_bvals(args.bval)
 
+        print('data file: ', args.nifti)
         print('modality:=DWMRI')
 
         b_max = max(bvals)
@@ -161,7 +122,7 @@ type: {np_to_nrrd[dtype.name]}\ndimension: {dim}\nspace: right-anterior-superior
         print(f'space directions: {matrix_string(spc_dir)}')
         print('centerings: cell cell cell')
         print('kinds: space space space')
-
+        print('data file: ', args.nifti)
         
     f.close()
     sys.stdout= console

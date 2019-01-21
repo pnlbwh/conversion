@@ -11,7 +11,8 @@ import numpy as np
 import argparse
 import os
 
-np.set_printoptions(suppress= True, floatmode= 'maxprec')
+PRECISION= 17
+np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
 
 def avg(imgFile, outFile, bvalFile= None, bvecFile= None):
 
