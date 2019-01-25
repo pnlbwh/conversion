@@ -50,7 +50,7 @@ def main():
     hdr= img.header
 
     if not args.nhdr:
-        args.nhdr= os.path.abspath(args.nifti).split('.')[0]
+        args.nhdr= os.path.abspath(args.nifti).split('.')[0]+'.nhdr'
     elif not args.nhdr.endswith('nhdr'):
         raise AttributeError('Output file must be nhdr')
     else:
