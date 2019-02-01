@@ -106,7 +106,7 @@ type: {np_to_nrrd[dtype.name]}\ndimension: {dim}\nspace: right-anterior-superior
         mf = find_mf(spc_dir)
         print(f'measurement frame: {matrix_string(mf)}')
 
-        bvecs = read_bvecs(args.bvec)
+        bvecs = read_bvecs(args.bvec, assumed_norm= False)
         bvals = read_bvals(args.bval)
 
         print('data file: ', args.nifti)
