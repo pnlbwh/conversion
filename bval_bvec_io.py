@@ -2,7 +2,7 @@ import numpy as np
 PRECISION= 17
 np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
 
-def read_bvecs(bvec_file):
+def read_bvecs(bvec_file, assumed_norm= True):
 
     with open(bvec_file, 'r') as f:
         bvecs = [[float(num) for num in line.split()] for line in f.read().split('\n') if line]
@@ -12,13 +12,14 @@ def read_bvecs(bvec_file):
     if len(bvecs) == 3:
         bvecs = tranpose(bvecs)
 
-    # normalize the bvecs (in case they are not)
-    for i in range(len(bvecs)):
-        L_2 = np.linalg.norm(bvecs[i])
-        if L_2:
-            bvecs[i]/= L_2
-        else:
-            bvecs[i]= [0, 0, 0]
+    if not assumed_norm:
+        # normalize the bvecs
+        for i in range(len(bvecs)):
+            L_2 = np.linalg.norm(bvecs[i])
+            if L_2:
+                bvecs[i]/= L_2
+            else:
+                bvecs[i]= [0, 0, 0]
 
     return bvecs
 
@@ -79,3 +80,48 @@ def bvec_scaling(bval, bvec, b_max):
     bvec = [str(x) for x in bvec]
 
     return ('   ').join(bvec)
+
+def read_grad_ind(filename):
+
+    with open(filename) as f:
+        content= f.read()
+
+    indices= content.replace(',', ' ')
+    indices= indices.split()
+
+    if indices:
+        return [int(x) for x in indices]
+    else:
+        raise IndexError('qc index list is empty')
+
+
+def nrrd_bvals_bvecs(hdr):
+    if hdr['dimension'] == 4:
+        axis_elements = hdr['kinds']
+    else:
+        raise AttributeError('Not a valid dwi, check dimension')
+
+    for i in range(4):
+        if axis_elements[i] == 'list' or axis_elements[i] == 'vector':
+            grad_axis = i
+            break
+
+
+    b_max = float(hdr['DWMRI_b-value'])
+
+    N = hdr['sizes'][grad_axis]
+    bvals = np.empty(N, dtype=float)
+    bvecs = np.empty((N, 3), dtype=float)
+    for ind in range(N):
+        bvec = [float(num) for num in hdr[f'DWMRI_gradient_{ind:04}'].split()]
+        L_2 = np.linalg.norm(bvec)
+        bvals[ind] = round(L_2 ** 2 * b_max)
+
+        if L_2:
+            bvecs[ind] = bvec / L_2
+        else:
+            bvecs[ind] = [0, 0, 0]
+
+
+    return (bvals, bvecs, b_max, grad_axis, N)
+
