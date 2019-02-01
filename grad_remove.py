@@ -14,7 +14,7 @@ import os
 PRECISION= 17
 np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
 
-def remove(imgFile, outFile, bad_indices= None, interval= None, bvalFile= None, bvecFile= None):
+def remove(imgFile, outFile, qc_bad_indices= [], interval= [], bvalFile= None, bvecFile= None):
 
     print('Reading input ...')
     if imgFile.endswith('.nii.gz') or imgFile.endswith('.nii'):
@@ -39,17 +39,19 @@ def remove(imgFile, outFile, bad_indices= None, interval= None, bvalFile= None, 
 
         bvals, bvecs, b_max, grad_axis, N= nrrd_bvals_bvecs(hdr)
 
-
-    if not bad_indices and interval:
-        bad_indices= [i for i in range(N) if bvals[i]>=interval[0] and bvals[i]<=interval[1]]
-        if not bad_indices:
-            raise ValueError('No bval falls in the range')
-
-
-    # index validity check
-    for i in bad_indices:
+    # qc index validity check
+    for i in qc_bad_indices:
         if i<0 or i>N:
             raise IndexError(f'Index {i} is out of bound')
+
+    shell_bad_indices=[]
+    if interval:
+        shell_bad_indices= [i for i in range(N) if bvals[i]>=interval[0] and bvals[i]<=interval[1]]
+        if not shell_bad_indices:
+            raise ValueError('No bval falls in the range')
+
+    bad_indices= qc_bad_indices+shell_bad_indices
+    bad_indices= list(set(bad_indices))
 
     print('Unwanted gradient indices: ', bad_indices)
 
@@ -98,7 +100,8 @@ def main():
     parser.add_argument('--bval', type=str, help='bval file')
     parser.add_argument('--bvec', type=str, help='bvec file')
     parser.add_argument('-q', '--qcFile', type=str, help='txt/csv file containing bad_indices of gradients to be removed, '
-                        'gradients are 0 indexed, list can be comma, space, or newline separated')
+                        'gradients are 0 indexed, indices correspond to the original dwi,'
+                        ' list can be comma, space, or newline separated')
     parser.add_argument('-r', '--range', type=str,
                         help='range of bvals to remove: [low,high] (include square brackets, no spaces)')
     parser.add_argument('-o', '--output', type=str, help='output nifti/nhdr file')
@@ -111,14 +114,18 @@ def main():
         parts= inFile.split('.')
         outFile= parts[0]+ '_gradRemoved.'+ ('.').join(ext for ext in parts[1: ])
 
-    if args.qcFile:
-        bad_indices= read_grad_ind(args.qcFile)
-        remove(inFile, outFile, bad_indices= bad_indices, bvalFile= args.bval, bvecFile= args.bvec)
 
-    elif args.range:
-        interval= args.range
-        interval= [int(x) for x in interval[1:-1].split(',')]
-        remove(inFile, outFile, interval= interval, bvalFile= args.bval, bvecFile= args.bvec)
+    qc_bad_indices= []
+    interval= []
+
+    if args.qcFile:
+        qc_bad_indices= read_grad_ind(args.qcFile)
+
+    if args.range:
+        interval = args.range
+        interval = [int(x) for x in interval[1:-1].split(',')]
+
+    remove(inFile, outFile, qc_bad_indices= qc_bad_indices, interval= interval, bvalFile= args.bval, bvecFile= args.bvec)
 
 
 if __name__ == '__main__':
