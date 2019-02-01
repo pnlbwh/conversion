@@ -5,7 +5,7 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=FutureWarning)
     import nibabel as nib
 
-from bval_bvec_io import read_bvals, read_bvecs, write_bvals, write_bvecs, bvec_scaling
+from bval_bvec_io import read_bvals, read_bvecs, write_bvals, write_bvecs, bvec_scaling, nrrd_bvals_bvecs
 import nrrd
 import numpy as np
 import argparse
@@ -19,6 +19,7 @@ def avg(imgFile, outFile, bvalFile= None, bvecFile= None):
 
     if imgFile.endswith('.nii.gz') or imgFile.endswith('.nii'):
         bvals= read_bvals(bvalFile)
+        N= len(bvals)
         b_max= max(bvals)
         bvecs= read_bvecs(bvecFile)
 
@@ -35,35 +36,11 @@ def avg(imgFile, outFile, bvalFile= None, bvecFile= None):
         hdr= img[1]
         hdr_out= hdr.copy()
 
-        if hdr['dimension']==4:
-            axis_elements= hdr['kinds']
-        else:
-            raise AttributeError('Not a valid dwi, check dimension')
-
-        for i in range(4):
-            if axis_elements[i] == 'list' or axis_elements[i] == 'vector':
-                grad_axis= i
-                break
-
+        bvals, bvecs, b_max, grad_axis, N= nrrd_bvals_bvecs(hdr)
 
         # put the gradients along last axis
         if grad_axis!=3:
             data= np.moveaxis(data, grad_axis, 3)
-
-        b_max= float(hdr['DWMRI_b-value'])
-
-        N= hdr['sizes'][grad_axis]
-        bvals= np.empty(N, dtype= float)
-        bvecs= np.empty((N,3), dtype= float)
-        for ind in range(N):
-            bvec = [float(num) for num in hdr[f'DWMRI_gradient_{ind:04}'].split()]
-            L_2= np.linalg.norm(bvec)
-            bvals[ind]= round(L_2 ** 2 * b_max)
-
-            if L_2:
-                bvecs[ind]= bvec/L_2
-            else:
-                bvecs[ind]= [0, 0, 0]
 
     print('Total input gradients ', len(bvals))
     # compute angles between bvecs, keep all the b0s, avg the rest alike ones
@@ -111,10 +88,11 @@ def avg(imgFile, outFile, bvalFile= None, bvecFile= None):
             data_new= np.moveaxis(data_new, 3, grad_axis)
         hdr_out['sizes'][grad_axis]= len(bvals_new)
 
-        try:
-            del hdr_out['data file']
-        except:
-            del hdr_out['datafile']
+        if outFile.endswith('.nhdr'):
+            try:
+                del hdr_out['data file']
+            except:
+                del hdr_out['datafile']
 
         for ind in range(len(bvals_new)):
             hdr_out['DWMRI_gradient_' + f'{ind:04}'] = bvec_scaling(bvals_new[ind], bvecs_new[ind], b_max)
