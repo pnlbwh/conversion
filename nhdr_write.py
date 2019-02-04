@@ -23,8 +23,8 @@ def matrix_string(A):
 def find_mf(F):
 
     FFT= F @ F.T
-    U, S, V= np.linalg.svd(FFT)
-    FFTsqrt= U @ np.diag(np.sqrt(S)) @ V
+    lam, V= np.linalg.eig(FFT)
+    FFTsqrt= V @ np.diag(np.sqrt(lam)) @ V.T
     R= FFTsqrt @ F
 
     return R.T
