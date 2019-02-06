@@ -27,6 +27,9 @@ def find_mf(F):
     FFTsqrt= V @ np.diag(np.sqrt(lam)) @ V.T
     R= FFTsqrt @ F
 
+    # get rid of scaling, normalize each column
+    R/=np.linalg.norm(R, axis=0)
+
     return R.T
 
 def main():
