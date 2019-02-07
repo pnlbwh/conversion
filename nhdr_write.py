@@ -122,7 +122,7 @@ type: {np_to_nrrd[dtype.name]}\ndimension: {dim}\nspace: right-anterior-superior
             print(f'DWMRI_gradient_{ind:04}:={scaled_bvec}')
 
     else:
-        print(f'space directions: {matrix_string(spc_dir)}')
+        print(f'space directions: {matrix_string(spc_dir.T)}')
         print('centerings: cell cell cell')
         print('kinds: space space space')
         print('data file: ', args.nifti)
