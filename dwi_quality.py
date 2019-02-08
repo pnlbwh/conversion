@@ -258,6 +258,7 @@ class quality(cli.Application):
 
         # conclusion
         N_mask= mask_data.sum()
+        print('\n\nConclusion: ')
         print('The masked dwi has %.5f%% voxels with values less than b0'
               % (negative * 100))
         print('The masked dwi has %.5f%% voxels with negative eigen value' % (evals_zero_mask.sum() / N_mask * 100))
