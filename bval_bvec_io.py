@@ -2,7 +2,7 @@ import numpy as np
 PRECISION= 17
 np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
 
-def read_bvecs(bvec_file, assumed_norm= True):
+def read_bvecs(bvec_file, assume_normed= True):
 
     with open(bvec_file, 'r') as f:
         bvecs = [[float(num) for num in line.split()] for line in f.read().split('\n') if line]
@@ -12,7 +12,7 @@ def read_bvecs(bvec_file, assumed_norm= True):
     if len(bvecs) == 3:
         bvecs = tranpose(bvecs)
 
-    if not assumed_norm:
+    if not assume_normed:
         # normalize the bvecs
         for i in range(len(bvecs)):
             L_2 = np.linalg.norm(bvecs[i])
