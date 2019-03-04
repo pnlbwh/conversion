@@ -21,7 +21,7 @@ def remove(imgFile, outFile, qc_bad_indices= [], interval= [], bvalFile= None, b
         bvals= read_bvals(bvalFile)
         N= len(bvals)
         b_max= max(bvals)
-        bvecs= read_bvecs(bvecFile, assumed_norm= False)
+        bvecs= read_bvecs(bvecFile, assume_normed= False)
         grad_axis= 3
 
         img= nib.load(imgFile)
