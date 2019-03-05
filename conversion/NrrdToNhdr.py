@@ -6,7 +6,6 @@ from plumbum import cli
 class App(cli.Application):
 
     force = cli.Flag(['--force'], help='Force overwrite if output already exists',mandatory=False,default=False)
-    threshold = cli.SwitchAttr('-f', help='Bet fractional intensity threshold', default=0.1)
 
     nrrdFile = cli.SwitchAttr(
         ['-i', '--input'],

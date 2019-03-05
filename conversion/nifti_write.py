@@ -39,22 +39,14 @@ def _space2ras(space):
     return np.diag(xfrm)
 
 
+def nifti_write(inImg, prefix= None):
 
-def main():
-
-    parser = argparse.ArgumentParser(description='NRRD to NIFTI conversion tool')
-    parser.add_argument('-i', '--input', type=str, required=True, help='input nrrd file')
-    parser.add_argument('-p', '--prefix', type=str,
-                        help='output prefix for .nii.gz, .bval, and .bvec files (default: input prefix)')
-
-
-    args = parser.parse_args()
-    if args.prefix:
-        prefix= os.path.abspath(args.prefix)
+    if prefix:
+        prefix= os.path.abspath(prefix)
     else:
-        prefix= os.path.abspath(args.input).split('.')[0]
+        prefix= os.path.abspath(inImg).split('.')[0]
 
-    img= nrrd.read(args.input)
+    img= nrrd.read(inImg)
     hdr= img[1]
     data= img[0]
 
@@ -125,6 +117,15 @@ def main():
     nib.save(img_nifti, prefix+'.nii.gz')
 
 
+def main():
+    parser = argparse.ArgumentParser(description='NRRD to NIFTI conversion tool')
+    parser.add_argument('-i', '--input', type=str, required=True, help='input nrrd file')
+    parser.add_argument('-p', '--prefix', type=str,
+                        help='output prefix for .nii.gz, .bval, and .bvec files (default: input prefix)')
+
+    args = parser.parse_args()
+
+    nifti_write(args.input, args.prefix)
 
 if __name__ == '__main__':
     main()

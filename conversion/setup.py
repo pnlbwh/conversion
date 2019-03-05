@@ -15,4 +15,4 @@ setup(name='conversion',
     package_data={'tests':'tests/*', 'data':'data/*'},
     project_urls={'Tracker':'https://github.com/pnlbwh/conversion/issues',
                     'Documentation':'https://github.com/pnlbwh/conversion/README.md'},
-    )
+    python_requires='>=3.0')
