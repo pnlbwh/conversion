@@ -5,7 +5,7 @@ dipy
 psutil
 plumbum
 pandas
-ants=2.2.0
+ants
 git
 pip
 
