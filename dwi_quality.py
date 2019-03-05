@@ -12,13 +12,16 @@ with warnings.catch_warnings():
 
 import nrrd
 import numpy as np
-from plumbum import cli
+np.set_printoptions(precision=5, suppress= True, floatmode= 'maxprec')
+
+from plumbum import cli, local
 import os
 from dipy.core.gradients import check_multi_b
+from fs_label_pareser import parse_labels
+from antsUtil import antsReg, applyXform
+import pandas as pd
 eps= 2.204e-16
 inf= 65535.
-
-np.set_printoptions(precision=5, suppress= True)
 
 def save_map(outFile, img, affine= None, hdr= None):
 
@@ -31,6 +34,15 @@ def save_map(outFile, img, affine= None, hdr= None):
                            'space': hdr['space'], 'kinds': ['space', 'space', 'space'],
                            'centerings': ['cell', 'cell', 'cell'], 'space origin': hdr['space origin']})
 
+def num2str(x):
+    if x>10e-5:
+        if x%1:
+            return f'%.6f' % x
+        else:
+            return f'%d' % x
+    else:
+        return '0'
+
 
 def hist_calc(a, bins):
     hist_string= []
@@ -39,7 +51,7 @@ def hist_calc(a, bins):
         hist_string.append(f'{bins[i]} <--> {bins[i+1]}')
 
     temp= np.histogram(a, bins=bins)[0]
-    hist= temp.astype('float')/sum(temp)
+    hist= temp.astype('float')/a.size
 
     try:
         hist[np.isnan]= 0
@@ -89,33 +101,44 @@ class quality(cli.Application):
      4. masks out of range FA, MD, and MK
      5. prints histogram for specified ranges
      6. gives a summary of analysis
+     7. performs ROI based analysis:
+        labelMap is defined in template space
+        find b0 from the dwi
+        register t2 MNI to dwi through b0
+        find N_gradient number of stats for each label
+        make a DataFrame with labels as rows and stats as columns
 
     Looking at the attributes, user should be able to infer quality of the DWI and
     changes inflicted upon it by some process.
     """
 
-    imgFile= cli.SwitchAttr(['-i', '--input'], mandatory=True, help='input nifti/nrrd dwi file')
-    maskFile= cli.SwitchAttr(['-m', '--mask'], mandatory=True, help='input nifti/nrrd dwi file')
-    bvalFile= cli.SwitchAttr('--bval', help='bval for nifti image')
-    bvecFile= cli.SwitchAttr('--bvec',  help='bvec for nifti image')
+    imgFile= cli.SwitchAttr(['-i', '--input'], cli.ExistingFile, mandatory=True, help='input nifti/nrrd dwi file')
+    maskFile= cli.SwitchAttr(['-m', '--mask'], cli.ExistingFile, mandatory=True, help='input nifti/nrrd dwi file')
+    bvalFile= cli.SwitchAttr('--bval', cli.ExistingFile, help='bval for nifti image')
+    bvecFile= cli.SwitchAttr('--bvec',  cli.ExistingFile, help='bvec for nifti image')
 
     mk_low_high= cli.SwitchAttr('--mk', help='[low,high] (include brackets, no space), '
-                        'mean kurtosis values outside the range are masked, requires at least three shells for dipy model'
-                        , default=f'[0,0.3]')
+                'mean kurtosis values outside the range are masked, requires at least three shells for dipy model'
+                , default=f'[0,0.3]')
 
-    fa_low_high= cli.SwitchAttr('--fa', help='[low,high], '
-                        'fractional anisotropy values outside the range are masked', default=f'[0,1]')
+    fa_low_high= cli.SwitchAttr('--fa', help='[low,high] (include brackets, no space), '
+                'fractional anisotropy values outside the range are masked', default=f'[0,1]')
 
-    md_low_high= cli.SwitchAttr('--md', help='[low,high], '
-                        'mean diffusivity values outside the range are masked', default=f'[0,1]')
+    md_low_high= cli.SwitchAttr('--md', help='[low,high], (include brackets, no space), '
+                'mean diffusivity values outside the range are masked', default=f'[0,0.0003]')
 
-    out_dir = cli.SwitchAttr(['-o', '--outDir'], help='output directory', default='input directory')
+    out_dir = cli.SwitchAttr(['-o', '--outDir'], cli.ExistingDirectory, help='output directory', default='input directory')
 
+    template= cli.SwitchAttr(['-t', '--template'], cli.ExistingFile, help='t2 image in standard space (ex: T2_MNI.nii.gz)')
+    labelMap= cli.SwitchAttr(['-l', '--labelMap'], cli.ExistingFile, help='labelMap in standard space')
+    name= cli.SwitchAttr(['-n', '--name'], help='labelMap name')
 
     def main(self):
 
         self.imgFile= str(self.imgFile)
         self.maskFile= str(self.maskFile)
+        self.template= str(self.template)
+        self.labelMap= str(self.labelMap)
 
         self.mk_low_high= [float(x) for x in self.mk_low_high[1:-1].split(',')]
         self.mk_low_high.sort()
@@ -128,9 +151,9 @@ class quality(cli.Application):
 
 
         if not self.out_dir:
-            outPrefix= os.path.abspath(self.imgFile).split('.')[0]
-        else:
-            outPrefix= self.out_dir+os.path.basename(self.imgFile).split('.')[0]
+            self.out_dir= os.path.dirname(self.imgFile)
+
+        outPrefix= os.path.join(self.out_dir, os.path.basename(self.imgFile).split('.')[0])
 
 
         if self.imgFile.endswith('.nii.gz') or self.imgFile.endswith('.nii'):
@@ -169,6 +192,8 @@ class quality(cli.Application):
         evals= dtifit.evals
         fa= dtifit.fa
         md= dtifit.md
+        ad= dtifit.ad
+        rd= dtifit.rd
         evals_zero= evals<0.
         evals_zero_mask= (evals_zero[...,0] | evals_zero[...,1] | evals_zero[...,2])*1
 
@@ -190,6 +215,9 @@ class quality(cli.Application):
         where_b0s= np.where(bvals==0)[0]
         where_dwi= np.where(bvals!=0)[0]
         bse_data= data[...,where_b0s].mean(-1)
+        b0File= outPrefix + '_b0' + outFormat
+        save_map(b0File, bse_data, affine, hdr)
+
         # prevent division by zero during normalization
         bse_data[bse_data < 1] = 1.
         extend_bse = np.expand_dims(bse_data, grad_axis)
@@ -211,7 +239,7 @@ class quality(cli.Application):
         bins= [-inf,0,inf]
         negative, _= hist_calc(minOverGrads, bins)
 
-        print('\neval<0 histogram')
+        print('\nevals<0 histogram')
         bins= [-inf,0,inf]
         hist_calc(evals, bins)
 
@@ -257,15 +285,84 @@ class quality(cli.Application):
 
 
         # conclusion
-        N_mask= mask_data.sum()
+        N_mask= mask_data.size
         print('\n\nConclusion: ')
         print('The masked dwi has %.5f%% voxels with values less than b0'
               % (negative * 100))
         print('The masked dwi has %.5f%% voxels with negative eigen value' % (evals_zero_mask.sum() / N_mask * 100))
-        print('The masked dwi has %.5f%% voxels with FA out of range' % (fa_mask.sum() / N_mask * 100))
-        print('The masked dwi has %.5f%% voxels with MD out of range' % (md_mask.sum() / N_mask * 100))
+        print('The masked dwi has %.5f%% voxels with FA out of [%f,%f]'
+              % (fa_mask.sum() / N_mask * 100, self.fa_low_high[0], self.fa_low_high[1]))
+        print('The masked dwi has %.5f%% voxels with MD out of [%f,%f]'
+              % (md_mask.sum() / N_mask * 100, self.md_low_high[0], self.md_low_high[1]))
         if mkFlag:
-            print('The masked dwi has %.5f%% voxels with MK out of range' % (mk_mask.sum() / N_mask*100))
+            print('The masked dwi has %.5f%% voxels with MK out of [%f,%f]'
+                  % (mk_mask.sum() / N_mask*100, self.mk_low_high[0], self.mk_low_high[1]))
+
+
+        # perform roi based analysis
+        if self.template and self.labelMap:
+            antsReg(b0File, self.maskFile, self.template, outPrefix)
+            warp = outPrefix+ '1Warp.nii.gz'
+            trans = outPrefix+ '0GenericAffine.mat'
+            outLabelMapFile = outPrefix + '_labelMap.nii.gz'
+            applyXform(self.labelMap, b0File, warp, trans, outLabelMapFile)
+            rm= local['rm']
+            rm(warp, trans,
+                  outPrefix+'Warped.nii.gz', outPrefix+'1InverseWarp.nii.gz', outPrefix+'InverseWarped.nii.gz')
+
+            outLabelMap = nib.load(outLabelMapFile).get_data()
+            labels = np.unique(nib.load(outLabelMapFile).get_data().round().astype(int))[1:]
+            label2name = parse_labels(labels)
+
+            print('Creating ROI based statistics ...')
+            stat_file= outPrefix + f'_{self.name}_stat.csv'
+            # with open(stat_file, 'w') as f:
+            df= pd.DataFrame(columns= ['region','FA_mean','FA_std','MD_mean','MD_std',
+                                       'AD_mean','AD_std','RD_mean','RD_std','MK_mean','MK_std',
+                                       'total_{min_i(b0-Gi)<0}','total_evals<0'])
+
+            # f.write('region,FA_mean,FA_std,MD_mean,MD_std,AD_mean,AD_std,RD_mean,RD_std,MK_mean,MK_std,'
+            #       'total_{min_i(b0-Gi)<0},total_evals<0\n')
+
+            for i,label in enumerate(label2name.keys()):
+                roi = outLabelMap == int(label)
+                fa_roi = applymask(fa, roi)
+                md_roi = applymask(md, roi)
+                ad_roi = applymask(ad, roi)
+                rd_roi = applymask(rd, roi)
+                mk_roi= np.zeros(roi.shape, dtype= float)
+                if mkFlag:
+                    mk_roi = applymask(mk, roi)
+                minOverGradsNegativeMask_roi = applymask(minOverGradsNegativeMask, roi)
+                evals_zero_mask_roi = applymask(evals_zero_mask, roi)
+
+                # properties= (',').join(format_number(x) for x in [
+                #                       fa_roi.mean(), fa_roi.std(),
+                #                       md_roi.mean(), md_roi.std(),
+                #                       ad_roi.mean(), ad_roi.std(),
+                #                       rd_roi.mean(), rd_roi.std(),
+                #                       mk_roi.mean(), mk_roi.std(),
+                #                       minOverGradsNegativeMask_roi.sum(),
+                #                       evals_zero_mask_roi.sum(),
+                #                       ])
+
+                properties= [num2str(x) for x in
+                                [fa_roi.mean(), fa_roi.std(),
+                                md_roi.mean(), md_roi.std(),
+                                ad_roi.mean(), ad_roi.std(),
+                                rd_roi.mean(), rd_roi.std(),
+                                mk_roi.mean(), mk_roi.std(),
+                                minOverGradsNegativeMask_roi.sum(),
+                                evals_zero_mask_roi.sum()]
+                             ]
+
+                df.loc[i]= [label2name[label]]+ properties
+                # f.write(label2name[label]+','+properties+'\n')
+
+            df= df.set_index('region')
+            print(df)
+            df.to_csv(stat_file)
+            print('See ', os.path.abspath(stat_file))
 
 if __name__=='__main__':
     quality.run()
