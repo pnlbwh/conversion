@@ -5,7 +5,4 @@ dipy
 psutil
 plumbum
 pandas
-ants
-git
-pip
 
