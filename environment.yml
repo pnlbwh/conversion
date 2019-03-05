@@ -2,6 +2,7 @@ name: conversion
 
 channels:
     - conda-forge
+    - aramislab
 
 dependencies:
     - python>=3.0
@@ -14,5 +15,6 @@ dependencies:
     - pandas
     - ants
     - git
+    - pip
     - pip:
         - git+https://github.com/mhe/pynrrd.git
