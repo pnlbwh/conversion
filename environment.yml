@@ -15,6 +15,5 @@ dependencies:
     - pandas
     - ants=2.2.0
     - git
-    - pip
     - pip:
         - git+https://github.com/mhe/pynrrd.git
