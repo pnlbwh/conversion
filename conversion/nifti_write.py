@@ -5,9 +5,9 @@ import numpy as np
 import argparse
 import warnings
 import os
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    import nibabel as nib
+# with warnings.catch_warnings():
+#     warnings.filterwarnings("ignore", category=FutureWarning)
+import nibabel as nib
 
 PRECISION= 17
 np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
@@ -113,13 +113,13 @@ def nifti_write(inImg, prefix= None):
     hdr_nifti['qform_code'] = 2
     hdr_nifti['sform_code']= 2
 
-    hdr_nifti['descrip']= 'pnl-bwh-hms'
+    hdr_nifti['descrip']= 'NRRD-->NIFTI transform by Tashrif Billah'
     nib.save(img_nifti, prefix+'.nii.gz')
 
 
 def main():
     parser = argparse.ArgumentParser(description='NRRD to NIFTI conversion tool')
-    parser.add_argument('-i', '--input', type=str, required=True, help='input nrrd file')
+    parser.add_argument('-i', '--input', type=str, required=True, help='input nrrd/nhdr file')
     parser.add_argument('-p', '--prefix', type=str,
                         help='output prefix for .nii.gz, .bval, and .bvec files (default: input prefix)')
 
