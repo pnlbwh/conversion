@@ -1,0 +1,3 @@
+The image files WIP_dti_ax_601.nii.gz, WIP_dti_ax_601.bval, and  WIP_dti_ax_601.bvec are covered by the 2-clause BSD license with copyright @ <February 2019> <Chris Rorden>, https://github.com/neurolabusc/dcm_qa_philips.
+
+The rest of the images are modified form of the above ones.

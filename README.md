@@ -9,7 +9,7 @@ This repository contains various mri conversion/modification scripts. Most impor
 conversion modules that replace `DWIConvert/ConvertBetweenFileFormats`. All the scripts require python>=3 interpreter
 and makes use of [](https://nipy.org/).
 
-Each of the following scripts has command line interface. Type `python Script.py --help` to see their functionality.
+Each of the following scripts has command line interface. Type `python script.py --help` to see their functionality.
 
 | Script  | Function |
 | ------------- | ------------- |
@@ -32,7 +32,7 @@ A research paper writing is in progress on the [conversion methods](https://driv
 
 If the package is useful in your research, please cite as below:
 
-Tashrif Billah and Sylvain Bouix, Various MRI Conversion Tools,
+Tashrif Billah, Sylvain Bouix and Yogesh Rathi, Various MRI Conversion Tools,
 https://github.com/pnlbwh/conversion, 2019, DOI: 10.5281/zenodo.2584003
 
 
@@ -70,7 +70,7 @@ cd conversion
 pip install . # or python setup.py install --prefix /HOME/miniconda3/
 ```
 
-* If you do not have ANTs, use [conda install -c aramislab ants=2.2.0](https://anaconda.org/Aramislab/ants) 
+Note: If you do not have ANTs, use [conda install -c aramislab ants=2.2.0](https://anaconda.org/Aramislab/ants) 
 to install ANTs. Also, you can build [ANTs](https://github.com/ANTsX/ANTs) from source. Either way, make sure 
 ANTs commands are in your path. For `conda install -c aramislab ants=2.2.0`, ANTs commands should be in 
 `miniconda3/pkgs/ants-2.2.0-0/bin` and `miniconda3/bin/antsRegistration`. If needed, use 
