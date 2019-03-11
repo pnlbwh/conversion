@@ -1,8 +1,8 @@
 ipython
 numpy
 nibabel
+pynrrd
 dipy
 psutil
 plumbum
 pandas
-
