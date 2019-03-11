@@ -1,13 +1,10 @@
 #/usr/bin/env python
 
-import os
-import numpy as np
-try:
-    labeFile= os.path.join(os.environ['FREESURFER_HOME'], 'FreeSurferColorLUT.txt')
-except:
-    raise KeyError('Set FREESURFER_HOME first and try again')
+from numpy import delete
+from os.path import join as pjoin, dirname
 
-contents= open(labeFile).read()
+labelFile= pjoin(dirname(__file__),'data','FreeSurferColorLUT.txt')
+contents= open(labelFile).read()
 lines= contents.split('\n')
 
 def parse_labels(labels):
@@ -21,7 +18,7 @@ def parse_labels(labels):
                 if int(num)== label:
                     dictionary[num]= name
                     names.append(name)
-                    labels= np.delete(labels,i)
+                    labels= delete(labels,i)
 
     # print(dictionary)
     return dictionary
