@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 import warnings
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    import nibabel as nib
+# with warnings.catch_warnings():
+#     warnings.filterwarnings("ignore", category=FutureWarning)
+import nibabel as nib
 
-from bval_bvec_io import read_bvals, read_bvecs, write_bvals, write_bvecs, bvec_scaling, nrrd_bvals_bvecs
+from conversion.bval_bvec_io import read_bvals, read_bvecs, write_bvals, write_bvecs, \
+    bvec_scaling, nrrd_bvals_bvecs
 import nrrd
 import numpy as np
 import argparse
@@ -14,7 +15,7 @@ import os
 PRECISION= 17
 np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
 
-def avg(imgFile, outFile, bvalFile= None, bvecFile= None):
+def grad_avg(imgFile, outFile, bvalFile= None, bvecFile= None):
 
 
     if imgFile.endswith('.nii.gz') or imgFile.endswith('.nii'):
@@ -42,6 +43,8 @@ def avg(imgFile, outFile, bvalFile= None, bvecFile= None):
         if grad_axis!=3:
             data= np.moveaxis(data, grad_axis, 3)
 
+    bvals= np.array(bvals)
+    bvecs= np.array(bvecs)
     print('Total input gradients ', len(bvals))
     # compute angles between bvecs, keep all the b0s, avg the rest alike ones
     compare_mask = N * [1]
@@ -89,9 +92,9 @@ def avg(imgFile, outFile, bvalFile= None, bvecFile= None):
         hdr_out['sizes'][grad_axis]= len(bvals_new)
 
         if outFile.endswith('.nhdr'):
-            try:
+            if 'data file' in hdr_out.keys():
                 del hdr_out['data file']
-            except:
+            elif 'datafile' in hdr_out.keys():
                 del hdr_out['datafile']
 
         for ind in range(len(bvals_new)):
@@ -125,7 +128,7 @@ def main():
         parts= inFile.split('.')
         outFile= parts[0]+ '_averaged.'+ ('.').join(ext for ext in parts[1: ])
 
-    avg(inFile, outFile, args.bval, args.bvec)
+    grad_avg(inFile, outFile, args.bval, args.bvec)
 
 if __name__ == '__main__':
     main()
