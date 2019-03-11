@@ -3,14 +3,14 @@
 import numpy as np
 import argparse
 import os, warnings, sys
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    import nibabel as nib
+# with warnings.catch_warnings():
+#     warnings.filterwarnings("ignore", category=FutureWarning)
+import nibabel as nib
 
 PRECISION= 17
 np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
 
-from bval_bvec_io import read_bvecs, read_bvals, bvec_scaling
+from conversion.bval_bvec_io import read_bvecs, read_bvals, bvec_scaling
 
 def matrix_string(A):
     # A= np.array(A)
@@ -76,7 +76,7 @@ def nhdr_write(nifti, bval, bvec, nhdr):
     console = sys.stdout
     sys.stdout = f
 
-    print(f'NRRD0005\n# NIFTI-->NHDR conversion by Tashrif Billah\n\
+    print(f'NRRD0005\n# NIFTI-->NHDR transform by Tashrif Billah\n\
 # See https://github.com/pnlbwh/conversion for more info\n\
 # Complete NRRD file format specification at:\n\
 # http://teem.sourceforge.net/nrrd/format.html\n\
@@ -97,7 +97,7 @@ type: {numpy_to_nrrd_dtype[dtype.name]}\ndimension: {dim}\nspace: right-anterior
 
     spc_orig = hdr.get_qform()[0:3, 3]
     print('space origin: ({})'.format((',').join(str(x) for x in spc_orig)))
-    print(f'data file: {nifti}')
+    print(f'data file: {os.path.basename(nifti)}')
 
     # define oldmin and oldmax when scl_slope and scl_inter are present
     scl_slope= img.dataobj.slope
