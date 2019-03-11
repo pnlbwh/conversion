@@ -10,7 +10,7 @@ def read_bvecs(bvec_file, assume_normed= True):
     # bvec_file can be 3xN or Nx3
     # we want to return as Nx3
     if len(bvecs) == 3:
-        bvecs = tranpose(bvecs)
+        bvecs = transpose(bvecs)
 
     if not assume_normed:
         # normalize the bvecs
@@ -52,7 +52,7 @@ def write_bvecs(bvec_file, bvecs):
         #         f.write((' ').join(str(i) for i in row)+ '\n')
 
 
-def tranpose(bvecs):
+def transpose(bvecs):
     # bvecs_T = matrix(list(map(list, zip(*bvecs))))
     bvecs_T = list(map(list, zip(*bvecs)))
 
@@ -64,7 +64,7 @@ def bvec_transpose(old_bvec_file, new_bvec_file):
     bvecs = read_bvecs(old_bvec_file)
 
     # making 3xN
-    bvecs_T = tranpose(bvecs)
+    bvecs_T = transpose(bvecs)
 
     # write bvecs back
     write_bvecs(new_bvec_file, bvecs_T)
