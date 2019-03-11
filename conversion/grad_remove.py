@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 import warnings
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    import nibabel as nib
+# with warnings.catch_warnings():
+#     warnings.filterwarnings("ignore", category=FutureWarning)
+import nibabel as nib
 
-from bval_bvec_io import read_bvals, read_bvecs, write_bvals, write_bvecs, bvec_scaling, read_grad_ind, nrrd_bvals_bvecs
+from conversion.bval_bvec_io import read_bvals, read_bvecs, write_bvals, write_bvecs, \
+    bvec_scaling, read_grad_ind, nrrd_bvals_bvecs
 import nrrd
 import numpy as np
 import argparse
@@ -14,7 +15,7 @@ import os
 PRECISION= 17
 np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
 
-def remove(imgFile, outFile, qc_bad_indices= [], interval= [], bvalFile= None, bvecFile= None):
+def grad_remove(imgFile, outFile, qc_bad_indices= [], interval= [], bvalFile= None, bvecFile= None):
 
     print('Reading input ...')
     if imgFile.endswith('.nii.gz') or imgFile.endswith('.nii'):
@@ -125,7 +126,7 @@ def main():
         interval = args.range
         interval = [int(x) for x in interval[1:-1].split(',')]
 
-    remove(inFile, outFile, qc_bad_indices= qc_bad_indices, interval= interval, bvalFile= args.bval, bvecFile= args.bvec)
+    grad_remove(inFile, outFile, qc_bad_indices= qc_bad_indices, interval= interval, bvalFile= args.bval, bvecFile= args.bvec)
 
 
 if __name__ == '__main__':
