@@ -1,25 +1,27 @@
 #!/usr/bin/env python
 
-import warnings
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    import nibabel as nib
-    from dipy.reconst import dki, dti
-    from dipy.io import read_bvals_bvecs
-    from bval_bvec_io import nrrd_bvals_bvecs
-    from dipy.core.gradients import gradient_table
-    from dipy.segment.mask import applymask
-
-import nrrd
-import numpy as np
-np.set_printoptions(precision=5, suppress= True, floatmode= 'maxprec')
-
 from plumbum import cli, local
 import os
+import warnings
+# with warnings.catch_warnings():
+#     warnings.filterwarnings("ignore", category=FutureWarning)
+import nibabel as nib
+from dipy.reconst import dki, dti
+from dipy.io import read_bvals_bvecs
+from dipy.core.gradients import gradient_table
+from dipy.segment.mask import applymask
 from dipy.core.gradients import check_multi_b
-from fs_label_pareser import parse_labels
-from antsUtil import antsReg, applyXform
+
+import nrrd
 import pandas as pd
+import numpy as np
+PRECISION= 5
+np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
+
+from conversion.bval_bvec_io import nrrd_bvals_bvecs
+from conversion.fs_label_parser import parse_labels
+from conversion.antsUtil import antsReg, applyXform
+
 eps= 2.204e-16
 inf= 65535.
 
@@ -108,7 +110,7 @@ class quality(cli.Application):
         find N_gradient number of stats for each label
         make a DataFrame with labels as rows and stats as columns
 
-    Looking at the attributes, user should be able to infer quality of the DWI and
+    Looking at the attributes, user should be able to infer quality of the DWMRI and
     changes inflicted upon it by some process.
     """
 
@@ -366,3 +368,4 @@ class quality(cli.Application):
 
 if __name__=='__main__':
     quality.run()
+
