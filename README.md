@@ -7,7 +7,7 @@
 
 This repository contains various mri conversion/modification scripts. Most importantly, it has reliable NRRD<-->NIFTI
 conversion modules that replace `DWIConvert/ConvertBetweenFileFormats`. All the scripts require python>=3 interpreter
-and makes use of [](https://nipy.org/).
+and makes use of [dipy](https://nipy.org/dipy).
 
 Each of the following scripts has command line interface. Type `python script.py --help` to see their functionality.
 
