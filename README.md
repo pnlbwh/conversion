@@ -119,7 +119,7 @@ Upon succesful installation, you can run tests as follows:
 
 ```
 cd conversion
-python -m unittest discover -v conversion/tests`
+python -m unittest discover -v conversion/tests
 ```
 
 
