@@ -139,8 +139,8 @@ class quality(cli.Application):
 
         self.imgFile= str(self.imgFile)
         self.maskFile= str(self.maskFile)
-        self.template= str(self.template)
-        self.labelMap= str(self.labelMap)
+        # self.template= str(self.template)
+        # self.labelMap= str(self.labelMap)
 
         self.mk_low_high= [float(x) for x in self.mk_low_high[1:-1].split(',')]
         self.mk_low_high.sort()
@@ -313,18 +313,23 @@ class quality(cli.Application):
                   outPrefix+'Warped.nii.gz', outPrefix+'1InverseWarp.nii.gz', outPrefix+'InverseWarped.nii.gz')
 
             outLabelMap = nib.load(outLabelMapFile).get_data()
-            labels = np.unique(nib.load(outLabelMapFile).get_data().round().astype(int))[1:]
+            labels = np.unique(outLabelMap.round().astype(int))[1:]
             label2name = parse_labels(labels)
 
             print('Creating ROI based statistics ...')
             stat_file= outPrefix + f'_{self.name}_stat.csv'
             # with open(stat_file, 'w') as f:
-            df= pd.DataFrame(columns= ['region','FA_mean','FA_std','MD_mean','MD_std',
-                                       'AD_mean','AD_std','RD_mean','RD_std','MK_mean','MK_std',
-                                       'total_{min_i(b0-Gi)<0}','total_evals<0'])
+                # f.write('region,FA_mean,FA_std,MD_mean,MD_std,AD_mean,AD_std,RD_mean,RD_std,MK_mean,MK_std,'
+                #       'total_{min_i(b0-Gi)<0},total_evals<0\n')
 
-            # f.write('region,FA_mean,FA_std,MD_mean,MD_std,AD_mean,AD_std,RD_mean,RD_std,MK_mean,MK_std,'
-            #       'total_{min_i(b0-Gi)<0},total_evals<0\n')
+            if mkFlag:
+                df= pd.DataFrame(columns= ['region','FA_mean','FA_std','MD_mean','MD_std',
+                                           'AD_mean','AD_std','RD_mean','RD_std','MK_mean','MK_std',
+                                           'total_{min_i(b0-Gi)<0}','total_evals<0'])
+            else:
+                df= pd.DataFrame(columns= ['region','FA_mean','FA_std','MD_mean','MD_std',
+                                           'AD_mean','AD_std','RD_mean','RD_std',
+                                           'total_{min_i(b0-Gi)<0}','total_evals<0'])
 
             for i,label in enumerate(label2name.keys()):
                 roi = outLabelMap == int(label)
@@ -332,13 +337,11 @@ class quality(cli.Application):
                 md_roi = applymask(md, roi)
                 ad_roi = applymask(ad, roi)
                 rd_roi = applymask(rd, roi)
-                mk_roi= np.zeros(roi.shape, dtype= float)
-                if mkFlag:
-                    mk_roi = applymask(mk, roi)
+
                 minOverGradsNegativeMask_roi = applymask(minOverGradsNegativeMask, roi)
                 evals_zero_mask_roi = applymask(evals_zero_mask, roi)
 
-                # properties= (',').join(format_number(x) for x in [
+                # properties= (',').join(num2str(x) for x in [
                 #                       fa_roi.mean(), fa_roi.std(),
                 #                       md_roi.mean(), md_roi.std(),
                 #                       ad_roi.mean(), ad_roi.std(),
@@ -348,15 +351,28 @@ class quality(cli.Application):
                 #                       evals_zero_mask_roi.sum(),
                 #                       ])
 
-                properties= [num2str(x) for x in
-                                [fa_roi.mean(), fa_roi.std(),
-                                md_roi.mean(), md_roi.std(),
-                                ad_roi.mean(), ad_roi.std(),
-                                rd_roi.mean(), rd_roi.std(),
-                                mk_roi.mean(), mk_roi.std(),
-                                minOverGradsNegativeMask_roi.sum(),
-                                evals_zero_mask_roi.sum()]
-                             ]
+                if mkFlag:
+                    mk_roi = applymask(mk, roi)
+
+                    properties= [num2str(x) for x in
+                                    [fa_roi.mean(), fa_roi.std(),
+                                    md_roi.mean(), md_roi.std(),
+                                    ad_roi.mean(), ad_roi.std(),
+                                    rd_roi.mean(), rd_roi.std(),
+                                    mk_roi.mean(), mk_roi.std(),
+                                    minOverGradsNegativeMask_roi.sum(),
+                                    evals_zero_mask_roi.sum()]
+                                 ]
+                else:
+                    properties= [num2str(x) for x in
+                                    [fa_roi.mean(), fa_roi.std(),
+                                    md_roi.mean(), md_roi.std(),
+                                    ad_roi.mean(), ad_roi.std(),
+                                    rd_roi.mean(), rd_roi.std(),
+                                    minOverGradsNegativeMask_roi.sum(),
+                                    evals_zero_mask_roi.sum()]
+                                 ]
+
 
                 df.loc[i]= [label2name[label]]+ properties
                 # f.write(label2name[label]+','+properties+'\n')
