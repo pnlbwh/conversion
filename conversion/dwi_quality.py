@@ -307,13 +307,13 @@ class quality(cli.Application):
             warp = outPrefix+ '1Warp.nii.gz'
             trans = outPrefix+ '0GenericAffine.mat'
             outLabelMapFile = outPrefix + '_labelMap.nii.gz'
-            applyXform(self.labelMap, b0File, warp, trans, outLabelMapFile)
+            applyXform(self.labelMap, b0File, warp, trans, outLabelMapFile, interp='NearestNeighbor')
             rm= local['rm']
             rm(warp, trans,
                   outPrefix+'Warped.nii.gz', outPrefix+'1InverseWarp.nii.gz', outPrefix+'InverseWarped.nii.gz')
 
             outLabelMap = nib.load(outLabelMapFile).get_data()
-            labels = np.unique(outLabelMap.round().astype(int))[1:]
+            labels = np.unique(outLabelMap)[1:]
             label2name = parse_labels(labels)
 
             print('Creating ROI based statistics ...')
