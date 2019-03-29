@@ -18,9 +18,10 @@ import numpy as np
 PRECISION= 5
 np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
 
-from conversion.bval_bvec_io import nrrd_bvals_bvecs
-from conversion.fs_label_parser import parse_labels
+from conversion import nrrd_bvals_bvecs
+from conversion import parse_labels
 from conversion.antsUtil import antsReg, applyXform
+from conversion import num2str
 
 eps= 2.204e-16
 inf= 65535.
@@ -35,15 +36,6 @@ def save_map(outFile, img, affine= None, hdr= None):
                    header={'space directions': hdr['space directions'][:3, :3],
                            'space': hdr['space'], 'kinds': ['space', 'space', 'space'],
                            'centerings': ['cell', 'cell', 'cell'], 'space origin': hdr['space origin']})
-
-def num2str(x):
-    if x>10e-5:
-        if x%1:
-            return f'%.6f' % x
-        else:
-            return f'%d' % x
-    else:
-        return '0'
 
 
 def hist_calc(a, bins):
@@ -115,7 +107,7 @@ class quality(cli.Application):
     """
 
     imgFile= cli.SwitchAttr(['-i', '--input'], cli.ExistingFile, mandatory=True, help='input nifti/nrrd dwi file')
-    maskFile= cli.SwitchAttr(['-m', '--mask'], cli.ExistingFile, mandatory=True, help='input nifti/nrrd dwi file')
+    maskFile= cli.SwitchAttr(['-m', '--mask'], cli.ExistingFile, mandatory=True, help='input nifti/nrrd mask file')
     bvalFile= cli.SwitchAttr('--bval', cli.ExistingFile, help='bval for nifti image')
     bvecFile= cli.SwitchAttr('--bvec',  cli.ExistingFile, help='bvec for nifti image')
 
@@ -164,7 +156,7 @@ class quality(cli.Application):
 
             img= nib.load(self.imgFile)
             data = img.get_data()
-            mask_data= nib.load(self.maskFile).get_data()
+
             affine= img.affine
             grad_axis= 3
             if len(data.shape)!=4:
@@ -176,7 +168,7 @@ class quality(cli.Application):
             img = nrrd.read(self.imgFile)
             data = img[0]
             hdr = img[1]
-            mask_data= nrrd.read(self.maskFile)[0]
+
             outFormat='.nrrd'
 
             bvals, bvecs, b_max, grad_axis, N = nrrd_bvals_bvecs(hdr)
@@ -184,6 +176,13 @@ class quality(cli.Application):
             # put the gradients along last axis
             if grad_axis != 3:
                 data = np.moveaxis(data, grad_axis, 3)
+
+        # provide the user a liberty to specify different file formats for dwi and mask
+        if self.maskFile.endswith('.nii.gz') or self.maskFile.endswith('.nii'):
+            mask_data = nib.load(self.maskFile).get_data()
+
+        elif self.maskFile.endswith('.nrrd') or self.maskFile.endswith('.nhdr'):
+            mask_data = nrrd.read(self.maskFile)[0]
 
         data= applymask(data, mask_data)
 
@@ -318,18 +317,11 @@ class quality(cli.Application):
 
             print('Creating ROI based statistics ...')
             stat_file= outPrefix + f'_{self.name}_stat.csv'
-            # with open(stat_file, 'w') as f:
-                # f.write('region,FA_mean,FA_std,MD_mean,MD_std,AD_mean,AD_std,RD_mean,RD_std,MK_mean,MK_std,'
-                #       'total_{min_i(b0-Gi)<0},total_evals<0\n')
 
-            if mkFlag:
-                df= pd.DataFrame(columns= ['region','FA_mean','FA_std','MD_mean','MD_std',
-                                           'AD_mean','AD_std','RD_mean','RD_std','MK_mean','MK_std',
-                                           'total_{min_i(b0-Gi)<0}','total_evals<0'])
-            else:
-                df= pd.DataFrame(columns= ['region','FA_mean','FA_std','MD_mean','MD_std',
-                                           'AD_mean','AD_std','RD_mean','RD_std',
-                                           'total_{min_i(b0-Gi)<0}','total_evals<0'])
+            df= pd.DataFrame(columns= ['region','FA_mean','FA_std','MD_mean','MD_std',
+                                                'AD_mean','AD_std','RD_mean','RD_std',
+                                                'total_{min_i(b0-Gi)<0}','total_evals<0',
+                                                'MK_mean','MK_std',])
 
             for i,label in enumerate(label2name.keys()):
                 roi = outLabelMap == int(label)
@@ -337,48 +329,27 @@ class quality(cli.Application):
                 md_roi = applymask(md, roi)
                 ad_roi = applymask(ad, roi)
                 rd_roi = applymask(rd, roi)
+                mk_roi = np.zeros(roi.shape)
 
                 minOverGradsNegativeMask_roi = applymask(minOverGradsNegativeMask, roi)
                 evals_zero_mask_roi = applymask(evals_zero_mask, roi)
 
-                # properties= (',').join(num2str(x) for x in [
-                #                       fa_roi.mean(), fa_roi.std(),
-                #                       md_roi.mean(), md_roi.std(),
-                #                       ad_roi.mean(), ad_roi.std(),
-                #                       rd_roi.mean(), rd_roi.std(),
-                #                       mk_roi.mean(), mk_roi.std(),
-                #                       minOverGradsNegativeMask_roi.sum(),
-                #                       evals_zero_mask_roi.sum(),
-                #                       ])
-
                 if mkFlag:
                     mk_roi = applymask(mk, roi)
 
-                    properties= [num2str(x) for x in
-                                    [fa_roi.mean(), fa_roi.std(),
-                                    md_roi.mean(), md_roi.std(),
-                                    ad_roi.mean(), ad_roi.std(),
-                                    rd_roi.mean(), rd_roi.std(),
-                                    mk_roi.mean(), mk_roi.std(),
-                                    minOverGradsNegativeMask_roi.sum(),
-                                    evals_zero_mask_roi.sum()]
-                                 ]
-                else:
-                    properties= [num2str(x) for x in
-                                    [fa_roi.mean(), fa_roi.std(),
-                                    md_roi.mean(), md_roi.std(),
-                                    ad_roi.mean(), ad_roi.std(),
-                                    rd_roi.mean(), rd_roi.std(),
-                                    minOverGradsNegativeMask_roi.sum(),
-                                    evals_zero_mask_roi.sum()]
-                                 ]
+                properties= [num2str(x) for x in [fa_roi.mean(), fa_roi.std(),
+                                                  md_roi.mean(), md_roi.std(),
+                                                  ad_roi.mean(), ad_roi.std(),
+                                                  rd_roi.mean(), rd_roi.std(),
+                                                  minOverGradsNegativeMask_roi.sum(), evals_zero_mask_roi.sum(),
+                                                  mk_roi.mean(), mk_roi.std()]
+                             ]
 
 
                 df.loc[i]= [label2name[label]]+ properties
-                # f.write(label2name[label]+','+properties+'\n')
 
             df= df.set_index('region')
-            print(df)
+            # print(df)
             df.to_csv(stat_file)
             print('See ', os.path.abspath(stat_file))
 
