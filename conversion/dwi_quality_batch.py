@@ -121,6 +121,8 @@ class quality_batch(cli.Application):
             imgPath= imgPath
             inPrefix= imgPath.split('.')[0]
 
+            bvalFile= None
+            bvecFile= None
             if imgPath.endswith('.nii') or imgPath.endswith('.nii.gz'):
                 bvalFile = inPrefix + '.bval'
                 bvecFile = inPrefix + '.bvec'
