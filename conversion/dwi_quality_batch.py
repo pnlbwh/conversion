@@ -16,9 +16,15 @@ SCRIPTDIR=dirname(__file__)
 
 def dwi_quality_wrapper(imgPath, maskPath, bvalFile, bvecFile,
                         mk_low_high, fa_low_high, md_low_high, out_dir, name, template, labelMap):
-
+        
+    if bvalFile and bvecFile:
         check_call((' ').join([f'{SCRIPTDIR}/dwi_quality.py',
                 '-i', imgPath,'-m', maskPath, '--bval', bvalFile, '--bvec', bvecFile,
+                '--mk', mk_low_high, '--fa', fa_low_high, '--md', md_low_high,
+                '-o', out_dir, '-n', name, '-t', template, '-l', labelMap]), shell= True)
+    else:
+        check_call((' ').join([f'{SCRIPTDIR}/dwi_quality.py',
+                '-i', imgPath,'-m', maskPath,
                 '--mk', mk_low_high, '--fa', fa_low_high, '--md', md_low_high,
                 '-o', out_dir, '-n', name, '-t', template, '-l', labelMap]), shell= True)
 
@@ -109,7 +115,7 @@ class quality_batch(cli.Application):
         self.template= str(self.template)
         self.labelMap= str(self.labelMap)
 
-        qcDir= 'qualityAnalysis'
+        qcDir= 'qualityAnalysis_epi'
         imgs, masks = read_caselist(self.imagelist)
 
 
@@ -120,10 +126,12 @@ class quality_batch(cli.Application):
         for imgPath, maskPath in zip(imgs, masks):
             imgPath= imgPath
             inPrefix= imgPath.split('.')[0]
-
-            # it doesn't hurt even if dwi is nrrd
-            bvalFile = inPrefix + '.bval'
-            bvecFile = inPrefix + '.bvec'
+            
+            bvalFile= None
+            bvecFile= None
+            if imgPath.endswith('.nii') or imgPath.endswith('.nii.gz'):
+                bvalFile = inPrefix + '.bval'
+                bvecFile = inPrefix + '.bvec'
 
             out_dir= join(dirname(imgPath), qcDir)
 
