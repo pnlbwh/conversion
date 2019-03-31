@@ -28,7 +28,7 @@ def dwi_quality_wrapper(imgPath, maskPath, bvalFile, bvecFile,
                 '--mk', mk_low_high, '--fa', fa_low_high, '--md', md_low_high,
                 '-o', out_dir, '-n', name, '-t', template, '-l', labelMap]), shell= True)
 
-def summarize_csvs(imgs, labelMapFile, qcDir, labelName):
+def summarize_csvs(imgs, labelMapFile, qcDir, labelName, out_csv):
 
     # extract case names from imgs
     cases=[]
@@ -60,10 +60,8 @@ def summarize_csvs(imgs, labelMapFile, qcDir, labelName):
         for region in regions:
             dfsummary.loc[region, idx[case]]= [num2str(x) for x in df.loc[region]]
 
-
-    stat_summary_file= '/tmp/dwiQualitySummary.csv'
-    dfsummary.to_csv(stat_summary_file)
-    print('See project summary', abspath(stat_summary_file))
+    dfsummary.to_csv(out_csv)
+    print('See project summary', abspath(out_csv))
 
 
 class quality_batch(cli.Application):
@@ -83,6 +81,7 @@ class quality_batch(cli.Application):
         find N_gradient number of stats for each label
         make a DataFrame with labels as rows and stats as columns
 
+    The quality attributes across subjects in the batch are exported into a csv/txt file.
     Looking at the attributes, user should be able to infer quality of the DWMRI and
     changes inflicted upon it by some process.
     """
@@ -105,6 +104,10 @@ class quality_batch(cli.Application):
     template= cli.SwitchAttr(['-t', '--template'], cli.ExistingFile, help='t2 image in standard space (ex: T2_MNI.nii.gz)')
     labelMap= cli.SwitchAttr(['-l', '--labelMap'], cli.ExistingFile, help='labelMap in standard space')
     name= cli.SwitchAttr(['-n', '--name'], help='labelMap name')
+    qcDir = cli.SwitchAttr(['-d', '--qcDir'], help='folder to be created in dwi image directory where results are saved',
+                           default='qualityAnalysis')
+
+    out_csv= cli.SwitchAttr(['-o', '--output'], help='summary csv/txt file', mandatory= True)
 
     N_proc = cli.SwitchAttr('--nproc',
             help= 'number of processes/threads to use (-1 for all available, may slow down your system)', default= 4)
@@ -115,9 +118,7 @@ class quality_batch(cli.Application):
         self.template= str(self.template)
         self.labelMap= str(self.labelMap)
 
-        qcDir= 'qualityAnalysis_epi'
         imgs, masks = read_caselist(self.imagelist)
-
 
         if int(self.N_proc)==-1:
             self.N_proc= psutil.cpu_count()
@@ -133,7 +134,7 @@ class quality_batch(cli.Application):
                 bvalFile = inPrefix + '.bval'
                 bvecFile = inPrefix + '.bvec'
 
-            out_dir= join(dirname(imgPath), qcDir)
+            out_dir= join(dirname(imgPath), self.qcDir)
 
             if isdir(out_dir):
                 # force re-run
@@ -145,7 +146,7 @@ class quality_batch(cli.Application):
         pool.close()
         pool.join()
 
-        summarize_csvs(imgs, str(self.labelMap), qcDir, self.name)
+        summarize_csvs(imgs, str(self.labelMap), self.qcDir, self.name, self.out_csv)
 
 
 if __name__ == '__main__':
