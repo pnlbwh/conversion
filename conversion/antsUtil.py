@@ -20,11 +20,12 @@ def antsReg(fixedImg, fixedMask, movingImg, outPrefix):
                                '-n', '8']), shell=True)
 
 
-def applyXform(inImg, refImg, warp, trans, outImg):
+def applyXform(inImg, refImg, warp, trans, outImg, interp='Linear'):
     antsApplyTransforms[
         '-d', '3',
         '-i', inImg,
         '-o', outImg,
         '-r', refImg,
-        '-t', warp, trans
+        '-t', warp, trans,
+        '-n', interp,
     ] & FG
