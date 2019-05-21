@@ -1,6 +1,7 @@
 from os.path import isfile
+from distutils.spawn import find_executable
 
-def read_caselist(file):
+def read_imgs_masks(file):
 
     with open(file) as f:
 
@@ -21,7 +22,46 @@ def read_caselist(file):
             masks.append(temp[1])
 
 
-        return (imgs, masks)
+    return (imgs, masks)
+
+
+def read_imgs(file):
+
+    with open(file) as f:
+
+        imgs = []
+        content= f.read()
+        for line, row in enumerate(content.split()):
+            if row and not isfile(row): # handling w/space
+                raise FileNotFoundError(f'{row} can\'t be found: check line {line} in {file}')
+            else:
+                imgs.append(row)
+
+    return imgs
+
+
+def read_cases(file):
+
+    f = open(file, 'r')
+
+    # omit any empty line in the caselist.txt
+    subjects = []
+    for s in list(f):
+        temp = s.strip()
+        if temp:
+            subjects.append(temp)
+
+    return subjects
+
+
+def loadExecutable(exe):
+
+    if find_executable(exe) is None:
+        print(f'{exe} could not be found')
+        print(f'Set "export PATH=$PATH:path_of_{exe}" and retry')
+        exit(1)
+    else:
+        print(f'{exe} found')
 
 
 def num2str(x):

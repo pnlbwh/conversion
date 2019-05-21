@@ -10,25 +10,25 @@ import multiprocessing
 import pandas as pd
 import nibabel as nib
 import numpy as np
-from conversion import parse_labels, read_caselist, num2str
+from conversion import parse_labels, read_imgs_masks, num2str
 from subprocess import check_call
 SCRIPTDIR=dirname(__file__)
 
 def dwi_quality_wrapper(imgPath, maskPath, bvalFile, bvecFile,
-                        mk_low_high, fa_low_high, md_low_high, out_dir, name, template, labelMap):
+                        mk_low_high, fa_low_high, md_low_high, out_dir, name, template, labelMap, lut):
         
     if bvalFile and bvecFile:
         check_call((' ').join([f'{SCRIPTDIR}/dwi_quality.py',
                 '-i', imgPath,'-m', maskPath, '--bval', bvalFile, '--bvec', bvecFile,
                 '--mk', mk_low_high, '--fa', fa_low_high, '--md', md_low_high,
-                '-o', out_dir, '-n', name, '-t', template, '-l', labelMap]), shell= True)
+                '-o', out_dir, '-n', name, '-t', template, '-l', labelMap, '--lut', lut]), shell= True)
     else:
         check_call((' ').join([f'{SCRIPTDIR}/dwi_quality.py',
                 '-i', imgPath,'-m', maskPath,
                 '--mk', mk_low_high, '--fa', fa_low_high, '--md', md_low_high,
-                '-o', out_dir, '-n', name, '-t', template, '-l', labelMap]), shell= True)
+                '-o', out_dir, '-n', name, '-t', template, '-l', labelMap, '--lut', lut]), shell= True)
 
-def summarize_csvs(imgs, labelMapFile, qcDir, labelName, out_csv):
+def summarize_csvs(imgs, labelMapFile, lut, qcDir, labelName, out_csv):
 
     # extract case names from imgs
     cases=[]
@@ -38,7 +38,7 @@ def summarize_csvs(imgs, labelMapFile, qcDir, labelName, out_csv):
     # extract region names from labelMap
     outLabelMap = nib.load(labelMapFile).get_data()
     labels = np.unique(outLabelMap)[1:]
-    regions = parse_labels(labels).values()
+    regions = parse_labels(labels, lut).values()
 
     # define dataFrame
     # reference: https://jakevdp.github.io/PythonDataScienceHandbook/03.05-hierarchical-indexing.html
@@ -87,7 +87,7 @@ class quality_batch(cli.Application):
     """
 
     imagelist= cli.SwitchAttr(['-i', '--input'], help='csv/txt file with first column for dwi'
-                        'and 2nd column for mask: dwi1,mask1\ndwi2,mask2\n...'
+                        'and 2nd column for mask: dwi1,mask1\\ndwi2,mask2\\n...'
                         'for nifti dwi, .bval and .bvec files should have same prefix as that of the dwi'
                         'accepts both nrrd/nifti format for each pair of (dwi,mask)', mandatory= True)
 
@@ -102,8 +102,10 @@ class quality_batch(cli.Application):
                 'mean diffusivity values outside the range are masked', default=f'[0,0.0003]')
 
     template= cli.SwitchAttr(['-t', '--template'], cli.ExistingFile, help='t2 image in standard space (ex: T2_MNI.nii.gz)')
-    labelMap= cli.SwitchAttr(['-l', '--labelMap'], cli.ExistingFile, help='labelMap in standard space')
-    name= cli.SwitchAttr(['-n', '--name'], help='labelMap name')
+    labelMap= cli.SwitchAttr(['-l', '--labelMap'], cli.ExistingFile, help='labelMap (atlas) in standard space')
+    lut = cli.SwitchAttr('--lut', cli.ExistingFile,
+                         help='look up table for specified labelMap (atlas), default: FreeSurferColorLUT.txt')
+    name = cli.SwitchAttr(['-n', '--name'], help='labelMap name (e.g WhiteMatter, GrayMatter etc.)')
     qcDir = cli.SwitchAttr(['-d', '--qcDir'], help='folder to be created in dwi image directory where results are saved',
                            default='qualityAnalysis')
 
@@ -118,7 +120,7 @@ class quality_batch(cli.Application):
         self.template= str(self.template)
         self.labelMap= str(self.labelMap)
 
-        imgs, masks = read_caselist(self.imagelist)
+        imgs, masks = read_imgs_masks(self.imagelist)
 
         if int(self.N_proc)==-1:
             self.N_proc= psutil.cpu_count()
@@ -127,7 +129,7 @@ class quality_batch(cli.Application):
         for imgPath, maskPath in zip(imgs, masks):
             imgPath= imgPath
             inPrefix= imgPath.split('.')[0]
-            
+
             bvalFile= None
             bvecFile= None
             if imgPath.endswith('.nii') or imgPath.endswith('.nii.gz'):
@@ -141,12 +143,15 @@ class quality_batch(cli.Application):
                 rmtree(out_dir)
             mkdir(out_dir)
             pool.apply_async(func= dwi_quality_wrapper, args= (imgPath, maskPath, bvalFile, bvecFile,
-                self.mk_low_high, self.fa_low_high, self.md_low_high, out_dir, self.name, self.template, self.labelMap))
+                self.mk_low_high, self.fa_low_high, self.md_low_high, out_dir, self.name,
+                self.template, self.labelMap, self.lut._path if self.lut else None))
+
+
 
         pool.close()
         pool.join()
 
-        summarize_csvs(imgs, str(self.labelMap), self.qcDir, self.name, self.out_csv)
+        summarize_csvs(imgs, self.labelMap, self.lut._path if self.lut else None, self.qcDir, self.name, self.out_csv)
 
 
 if __name__ == '__main__':

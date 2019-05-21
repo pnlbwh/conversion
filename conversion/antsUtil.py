@@ -10,14 +10,14 @@ def antsReg(fixedImg, fixedMask, movingImg, outPrefix):
                                '-x', fixedMask,
                                '-m', movingImg,
                                '-o', outPrefix,
-                               '-n', '8']), shell=True)
+                               '-n', '4']), shell=True)
     else:
         check_call((' ').join(['antsRegistrationSyNQuick.sh',
                                '-d', '3',
                                '-f', fixedImg,
                                '-m', movingImg,
                                '-o', outPrefix,
-                               '-n', '8']), shell=True)
+                               '-n', '4']), shell=True)
 
 
 def applyXform(inImg, refImg, warp, trans, outImg, interp='Linear'):
