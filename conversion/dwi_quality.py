@@ -124,15 +124,15 @@ class quality(cli.Application):
     out_dir = cli.SwitchAttr(['-o', '--outDir'], cli.ExistingDirectory, help='output directory', default='input directory')
 
     template= cli.SwitchAttr(['-t', '--template'], cli.ExistingFile, help='t2 image in standard space (ex: T2_MNI.nii.gz)')
-    labelMap= cli.SwitchAttr(['-l', '--labelMap'], cli.ExistingFile, help='labelMap in standard space')
-    name= cli.SwitchAttr(['-n', '--name'], help='labelMap name')
+    labelMap= cli.SwitchAttr(['-l', '--labelMap'], cli.ExistingFile, help='labelMap (atlas) in standard space')
+    lut = cli.SwitchAttr('--lut', cli.ExistingFile,
+                         help='look up table for specified labelMap (atlas), default: FreeSurferColorLUT.txt')
+    name= cli.SwitchAttr(['-n', '--name'], help='labelMap name (e.g WhiteMatter, GrayMatter etc.)')
 
     def main(self):
 
         self.imgFile= str(self.imgFile)
         self.maskFile= str(self.maskFile)
-        # self.template= str(self.template)
-        # self.labelMap= str(self.labelMap)
 
         self.mk_low_high= [float(x) for x in self.mk_low_high[1:-1].split(',')]
         self.mk_low_high.sort()
@@ -313,7 +313,7 @@ class quality(cli.Application):
 
             outLabelMap = nib.load(outLabelMapFile).get_data()
             labels = np.unique(outLabelMap)[1:]
-            label2name = parse_labels(labels)
+            label2name = parse_labels(labels, self.lut._path)
 
             print('Creating ROI based statistics ...')
             stat_file= outPrefix + f'_{self.name}_stat.csv'
@@ -325,6 +325,8 @@ class quality(cli.Application):
 
             for i,label in enumerate(label2name.keys()):
                 roi = outLabelMap == int(label)
+                _roi= np.where(roi>0)
+
                 fa_roi = applymask(fa, roi)
                 md_roi = applymask(md, roi)
                 ad_roi = applymask(ad, roi)
@@ -337,12 +339,12 @@ class quality(cli.Application):
                 if mkFlag:
                     mk_roi = applymask(mk, roi)
 
-                properties= [num2str(x) for x in [fa_roi.mean(), fa_roi.std(),
-                                                  md_roi.mean(), md_roi.std(),
-                                                  ad_roi.mean(), ad_roi.std(),
-                                                  rd_roi.mean(), rd_roi.std(),
-                                                  minOverGradsNegativeMask_roi.sum(), evals_zero_mask_roi.sum(),
-                                                  mk_roi.mean(), mk_roi.std()]
+                properties= [num2str(x) for x in [fa_roi[_roi].mean(), fa_roi[_roi].std(),
+                                                  md_roi[_roi].mean(), md_roi[_roi].std(),
+                                                  ad_roi[_roi].mean(), ad_roi[_roi].std(),
+                                                  rd_roi[_roi].mean(), rd_roi[_roi].std(),
+                                                  minOverGradsNegativeMask_roi[_roi].sum(), evals_zero_mask_roi[_roi].sum(),
+                                                  mk_roi[_roi].mean(), mk_roi[_roi].std()]
                              ]
 
 
