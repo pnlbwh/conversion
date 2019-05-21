@@ -273,6 +273,8 @@ class quality(cli.Application):
             save_map(outPrefix + '_MK' + outFormat, mk, affine, hdr)
             print('Creating mk out of range mask ...')
             save_map(outPrefix + '_MK_mask' + outFormat, mk_mask.astype('short'), affine, hdr)
+        else:
+            mk= np.zeros(fa.shape)
 
         print('\nCreating fa image ...')
         save_map(outPrefix + '_FA' + outFormat, fa, affine, hdr)
@@ -313,7 +315,7 @@ class quality(cli.Application):
 
             outLabelMap = nib.load(outLabelMapFile).get_data()
             labels = np.unique(outLabelMap)[1:]
-            label2name = parse_labels(labels, self.lut._path)
+            label2name = parse_labels(labels, self.lut._path if self.lut else None)
 
             print('Creating ROI based statistics ...')
             stat_file= outPrefix + f'_{self.name}_stat.csv'
@@ -325,26 +327,13 @@ class quality(cli.Application):
 
             for i,label in enumerate(label2name.keys()):
                 roi = outLabelMap == int(label)
-                _roi= np.where(roi>0)
 
-                fa_roi = applymask(fa, roi)
-                md_roi = applymask(md, roi)
-                ad_roi = applymask(ad, roi)
-                rd_roi = applymask(rd, roi)
-                mk_roi = np.zeros(roi.shape)
-
-                minOverGradsNegativeMask_roi = applymask(minOverGradsNegativeMask, roi)
-                evals_zero_mask_roi = applymask(evals_zero_mask, roi)
-
-                if mkFlag:
-                    mk_roi = applymask(mk, roi)
-
-                properties= [num2str(x) for x in [fa_roi[_roi].mean(), fa_roi[_roi].std(),
-                                                  md_roi[_roi].mean(), md_roi[_roi].std(),
-                                                  ad_roi[_roi].mean(), ad_roi[_roi].std(),
-                                                  rd_roi[_roi].mean(), rd_roi[_roi].std(),
-                                                  minOverGradsNegativeMask_roi[_roi].sum(), evals_zero_mask_roi[_roi].sum(),
-                                                  mk_roi[_roi].mean(), mk_roi[_roi].std()]
+                properties= [num2str(x) for x in [fa[roi>0].mean(), fa[roi>0].std(),
+                                                  md[roi>0].mean(), md[roi>0].std(),
+                                                  ad[roi>0].mean(), ad[roi>0].std(),
+                                                  rd[roi>0].mean(), rd[roi>0].std(),
+                                                  minOverGradsNegativeMask[roi>0].sum(), evals_zero_mask[roi>0].sum(),
+                                                  mk[roi>0].mean(), mk[roi>0].std()]
                              ]
 
 
