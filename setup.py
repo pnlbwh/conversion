@@ -6,7 +6,7 @@ requirements= open('requirements.txt').read().split()
 # print(requirements)
 
 setup(name='conversion',
-    version='2.0',
+    version='2.2',
     description='Python utility scripts for MRI processing',
     author='Tashrif Billah',
     author_email='tbillah@bwh.harvard.edu, tashrifbillah@gmail.com',
