@@ -3,6 +3,18 @@
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.2584003.svg)](https://doi.org/10.5281/zenodo.2584003) [![Python](https://img.shields.io/badge/Python-3.6-green.svg)]() [![Platform](https://img.shields.io/badge/Platform-linux--64%20%7C%20osx--64%20%7C%20win--64-orange.svg)]() [![License](https://img.shields.io/badge/License-MIT-yellow.svg)]()
 
 
+Table of Contents
+=================
+
+   * [Conversion](#conversion)
+   * [Citation](#citation)
+   * [Installation](#installation)
+   * [Tests](#tests)
+   * [Example usage](#example-usage)
+   * [Acknowledgement](#acknowledgement)
+
+Table of Contents created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
+
 # Conversion
 
 This repository contains various mri conversion/modification scripts. Most importantly, it has reliable NRRD<-->NIFTI
@@ -32,7 +44,7 @@ A research paper writing is in progress on the [conversion methods](https://driv
 
 If the package is useful in your research, please cite as below:
 
-Tashrif Billah, Sylvain Bouix and Yogesh Rathi, Various MRI Conversion Tools,
+Billah, Tashrif; Bouix; Sylvain; Rathi, Yogesh; Various MRI Conversion Tools,
 https://github.com/pnlbwh/conversion, 2019, DOI: 10.5281/zenodo.2584003
 
 
@@ -77,7 +89,7 @@ ANTs commands are in your path. For `conda install -c aramislab ants=2.2.0`, ANT
 `export PATH=$PATH:miniconda3/pkgs/ants-2.2.0-0/bin` to put all the commands in your path.
 
 
-After installation is complete, fire up ipython/python and you should be able to do the following:
+After installation is complete, launch ipython/python and you should be able to do the following:
 
 ```
 In [1]: import conversion
