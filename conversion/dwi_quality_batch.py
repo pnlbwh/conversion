@@ -21,12 +21,12 @@ def dwi_quality_wrapper(imgPath, maskPath, bvalFile, bvecFile,
         check_call((' ').join([f'{SCRIPTDIR}/dwi_quality.py',
                 '-i', imgPath,'-m', maskPath, '--bval', bvalFile, '--bvec', bvecFile,
                 '--mk', mk_low_high, '--fa', fa_low_high, '--md', md_low_high,
-                '-o', out_dir, '-n', name, '-t', template, '-l', labelMap, '-lut', lut]), shell= True)
+                '-o', out_dir, '-n', name, '-t', template, '-l', labelMap, '--lut', lut]), shell= True)
     else:
         check_call((' ').join([f'{SCRIPTDIR}/dwi_quality.py',
                 '-i', imgPath,'-m', maskPath,
                 '--mk', mk_low_high, '--fa', fa_low_high, '--md', md_low_high,
-                '-o', out_dir, '-n', name, '-t', template, '-l', labelMap, '-lut', lut]), shell= True)
+                '-o', out_dir, '-n', name, '-t', template, '-l', labelMap, '--lut', lut]), shell= True)
 
 def summarize_csvs(imgs, labelMapFile, lut, qcDir, labelName, out_csv):
 
@@ -129,7 +129,7 @@ class quality_batch(cli.Application):
         for imgPath, maskPath in zip(imgs, masks):
             imgPath= imgPath
             inPrefix= imgPath.split('.')[0]
-            
+
             bvalFile= None
             bvecFile= None
             if imgPath.endswith('.nii') or imgPath.endswith('.nii.gz'):
@@ -144,12 +144,14 @@ class quality_batch(cli.Application):
             mkdir(out_dir)
             pool.apply_async(func= dwi_quality_wrapper, args= (imgPath, maskPath, bvalFile, bvecFile,
                 self.mk_low_high, self.fa_low_high, self.md_low_high, out_dir, self.name,
-                self.template, self.labelMap, self.lut._path))
+                self.template, self.labelMap, self.lut._path if self.lut else None))
+
+
 
         pool.close()
         pool.join()
 
-        summarize_csvs(imgs, self.labelMap, self.lut._path, self.qcDir, self.name, self.out_csv)
+        summarize_csvs(imgs, self.labelMap, self.lut._path if self.lut else None, self.qcDir, self.name, self.out_csv)
 
 
 if __name__ == '__main__':
