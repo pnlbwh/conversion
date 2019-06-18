@@ -70,6 +70,32 @@ def bvec_transpose(old_bvec_file, new_bvec_file):
     write_bvecs(new_bvec_file, bvecs_T)
 
 
+def tranpose(bvecs):
+
+    # bvecs_T = matrix(list(map(list, zip(*bvecs))))
+    bvecs_T = list(map(list, zip(*bvecs)))
+
+    return bvecs_T
+
+
+def bvec_rotate(old_bvec_file, new_bvec_file, rot_matrix):
+
+    # read bvecs
+    bvecs= read_bvecs(old_bvec_file)
+
+    # making 3xN
+    bvecs_T= tranpose(bvecs)
+
+    # rotate bvecs
+    bvecs_T= np.matrix.round(rot_matrix @ np.matrix(bvecs_T), PRECISION)
+
+    # making Nx3 again
+    bvecs = tranpose(bvecs_T)
+
+    # write bvecs back
+    write_bvecs(new_bvec_file, bvecs)
+
+
 def bvec_scaling(bval, bvec, b_max):
     if bval:
         factor = np.sqrt(bval / b_max)
