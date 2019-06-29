@@ -55,7 +55,7 @@ def nifti_write(inImg, prefix= None):
 
     SPACE2RAS = _space2ras(hdr['space'])
     xfrm_nhdr= np.matrix(np.vstack((np.hstack((hdr['space directions'][:3,:3].T,
-                        np.reshape(hdr['space origin'],(3,1)))),[0,0,0,1])))
+                        np.reshape(hdr['space origin'][~np.isnan(hdr['space origin'])],(3,1)))),[0,0,0,1])))
     xfrm_nifti= SPACE2RAS @ xfrm_nhdr
     # RAS2IJK= xfrm_nifti.I
 
