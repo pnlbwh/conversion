@@ -72,7 +72,7 @@ def nhdr_write(nifti, bval, bvec, nhdr):
         'float64': 'double'
     }
 
-    f = open(os.path.abspath(nhdr), 'w')
+    f = open(nhdr, 'w')
     console = sys.stdout
     sys.stdout = f
 
@@ -85,7 +85,7 @@ type: {numpy_to_nrrd_dtype[dtype.name]}\ndimension: {dim}\nspace: right-anterior
     sizes = hdr['dim'][1:dim + 1]
     print('sizes: {}'.format((' ').join(str(x) for x in sizes)))
 
-    spc_dir = hdr.get_sform()[0:3, 0:3]
+    spc_dir = hdr.get_best_affine()[0:3, 0:3]
 
     # most important key
     print('byteskip: -1')
@@ -110,7 +110,8 @@ type: {numpy_to_nrrd_dtype[dtype.name]}\ndimension: {dim}\nspace: right-anterior
         print(f'old max: {oldmax}')
 
     # print description
-    print('# {}'.format(np.char.decode(img.header['descrip'])))
+    if img.header['descrip']:
+        print('# {}'.format(np.char.decode(img.header['descrip'])))
 
     if dim == 4:
         print(f'space directions: {matrix_string(spc_dir.T)} none')
@@ -151,7 +152,7 @@ def main():
     parser.add_argument('--nifti', type=str, required=True, help='nifti file')
     parser.add_argument('--bval', type=str, help='bval file')
     parser.add_argument('--bvec', type=str, help='bvec file')
-    parser.add_argument('--nhdr', type=str, help='output nhdr file')
+    parser.add_argument('--nhdr', type=str, help='output nhdr file, nifti and nhdr should be in the same directory')
 
     args = parser.parse_args()
     nhdr_write(args.nifti, args.bval, args.bvec, args.nhdr)
