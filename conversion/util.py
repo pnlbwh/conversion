@@ -7,9 +7,10 @@ def read_imgs_masks(file):
 
         imgs = []
         masks = []
-        content= f.read()
-        for line, row in enumerate(content.split()):
-            temp= [element for element in row.split(',') if element] # handling w/space
+        content= f.read().strip()
+
+        for line, row in enumerate(content.split('\n')):
+            temp= [element.strip() for element in row.split(',') if element] # handling w/space
 
             if len(temp) != 2:
                 raise FileNotFoundError(f'Columns don\'t have same number of entries: check line {line} in {file}')
@@ -30,8 +31,9 @@ def read_imgs(file):
     with open(file) as f:
 
         imgs = []
-        content= f.read()
-        for line, row in enumerate(content.split()):
+        content= f.read().strip()
+
+        for line, row in enumerate(content.split('\n')):
             if row and not isfile(row): # handling w/space
                 raise FileNotFoundError(f'{row} can\'t be found: check line {line} in {file}')
             else:
@@ -50,6 +52,8 @@ def read_cases(file):
         temp = s.strip()
         if temp:
             subjects.append(temp)
+    
+    f.close()
 
     return subjects
 
@@ -72,3 +76,4 @@ def num2str(x):
             return f'%d' % x
     else:
         return '0'
+
