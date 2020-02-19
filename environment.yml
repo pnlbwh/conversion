@@ -2,7 +2,7 @@ name: conversion
 
 channels:
     - conda-forge
-    - aramislab
+    - pnlbwh
 
 dependencies:
     - python>=3.0
@@ -13,7 +13,7 @@ dependencies:
     - psutil
     - plumbum
     - pandas
-    - ants=2.2.0
+    - ants
     - git
     - pip:
         - git+https://github.com/mhe/pynrrd.git

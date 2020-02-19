@@ -82,9 +82,9 @@ cd conversion
 pip install . # or python setup.py install --prefix /HOME/miniconda3/
 ```
 
-Note: If you do not have ANTs, use [conda install -c aramislab ants=2.2.0](https://anaconda.org/Aramislab/ants) 
+Note: If you do not have ANTs, use [conda install -c pnlbwh ants](https://anaconda.org/pnlbwh/ants) 
 to install ANTs. Also, you can build [ANTs](https://github.com/ANTsX/ANTs) from source. Either way, make sure 
-ANTs commands are in your path. For `conda install -c aramislab ants=2.2.0`, ANTs commands should be in 
+ANTs commands are in your path. For `conda install -c pnlbwh ants`, ANTs commands should be in 
 `miniconda3/pkgs/ants-2.2.0-0/bin` and `miniconda3/bin/antsRegistration`. If needed, use 
 `export PATH=$PATH:miniconda3/pkgs/ants-2.2.0-0/bin` to put all the commands in your path.
 
