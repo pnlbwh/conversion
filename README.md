@@ -83,7 +83,7 @@ The above will install the package and associated dependencies in
 
 After installation is complete, launch ipython/python and you should be able to do the following:
 
-```ipython
+```python
 In [1]: import conversion
 In [2]: dir(conversion)
 Out[2]:
