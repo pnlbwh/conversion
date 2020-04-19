@@ -2,18 +2,13 @@ name: conversion
 
 channels:
     - conda-forge
-    - pnlbwh
 
 dependencies:
     - python>=3.0
     - ipython
     - numpy
     - nibabel
-    - dipy
-    - psutil
     - plumbum
-    - pandas
-    - ants
     - git
     - pip:
         - git+https://github.com/mhe/pynrrd.git
