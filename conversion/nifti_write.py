@@ -54,17 +54,21 @@ def nifti_write(inImg, prefix= None):
     TIME_UNITS = 0
 
     SPACE2RAS = _space2ras(hdr['space'])
-    xfrm_nhdr= np.matrix(np.vstack((np.hstack((hdr['space directions'][:3,:3].T,
-                        np.reshape(hdr['space origin'][~np.isnan(hdr['space origin'])],(3,1)))),[0,0,0,1])))
-    xfrm_nifti= SPACE2RAS @ xfrm_nhdr
-    # RAS2IJK= xfrm_nifti.I
 
+    translation= hdr['space origin']
+    
     if hdr['dimension']==4:
         axis_elements= hdr['kinds']
         for i in range(4):
             if axis_elements[i] == 'list' or axis_elements[i] == 'vector':
                 grad_axis= i
                 break
+        
+        volume_axes= [0,1,2,3]
+        volume_axes.remove(grad_axis)
+        rotation= hdr['space directions'][volume_axes,:3]
+        
+        xfrm_nhdr= np.matrix(np.vstack((np.hstack((rotation.T, np.reshape(translation,(3,1)))),[0,0,0,1])))
 
         # put the gradients along last axis
         if grad_axis!=3:
@@ -100,6 +104,13 @@ def nifti_write(inImg, prefix= None):
         f_vec.close()
 
         TIME_UNITS= 8
+    
+    else:
+        rotation= hdr['space directions']
+
+
+    xfrm_nifti= SPACE2RAS @ xfrm_nhdr
+    # RAS2IJK= xfrm_nifti.I
 
 
     # automatically sets dim, data_type, pixdim, affine
