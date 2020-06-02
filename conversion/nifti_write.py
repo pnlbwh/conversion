@@ -73,40 +73,47 @@ def nifti_write(inImg, prefix= None):
         # put the gradients along last axis
         if grad_axis!=3:
             data= np.moveaxis(data, grad_axis, 3)
+        
+        try:
+            # DWMRI
+            # write .bval and .bvec
+            f_val= open(prefix+'.bval', 'w')
+            f_vec= open(prefix+'.bvec', 'w')
+            b_max = float(hdr['DWMRI_b-value'])
 
-        # write .bval and .bvec
-        f_val= open(prefix+'.bval', 'w')
-        f_vec= open(prefix+'.bvec', 'w')
-        b_max = float(hdr['DWMRI_b-value'])
+            mf= np.matrix(np.vstack((np.hstack((hdr['measurement frame'],
+                                                [[0],[0],[0]])),[0,0,0,1])))
+            for ind in range(hdr['sizes'][grad_axis]):
+                bvec = [float(num) for num in hdr[f'DWMRI_gradient_{ind:04}'].split()]
+                L_2= np.linalg.norm(bvec[:3])
+                bval= round(L_2 ** 2 * b_max)
 
-        mf= np.matrix(np.vstack((np.hstack((hdr['measurement frame'],
-                                            [[0],[0],[0]])),[0,0,0,1])))
-        for ind in range(hdr['sizes'][grad_axis]):
-            bvec = [float(num) for num in hdr[f'DWMRI_gradient_{ind:04}'].split()]
-            L_2= np.linalg.norm(bvec[:3])
-            bval= round(L_2 ** 2 * b_max)
+                bvec.append(1)
+                # bvecINijk= RAS2IJK @ SPACE2RAS @ mf @ np.matrix(bvec).T
+                # simplified below
+                bvecINijk= xfrm_nhdr.T @ mf @ np.matrix(bvec).T
 
-            bvec.append(1)
-            # bvecINijk= RAS2IJK @ SPACE2RAS @ mf @ np.matrix(bvec).T
-            # simplified below
-            bvecINijk= xfrm_nhdr.T @ mf @ np.matrix(bvec).T
+                L_2= np.linalg.norm(bvecINijk[:3])
+                if L_2:
+                    bvec_norm= bvecINijk[:3]/L_2
+                else:
+                    bvec_norm= [0, 0, 0]
 
-            L_2= np.linalg.norm(bvecINijk[:3])
-            if L_2:
-                bvec_norm= bvecINijk[:3]/L_2
-            else:
-                bvec_norm= [0, 0, 0]
+                f_val.write(str(bval)+' ')
+                f_vec.write(('  ').join(str(x) for x in np.array(bvec_norm).flatten())+'\n')
 
-            f_val.write(str(bval)+' ')
-            f_vec.write(('  ').join(str(x) for x in np.array(bvec_norm).flatten())+'\n')
-
-        f_val.close()
-        f_vec.close()
-
+            f_val.close()
+            f_vec.close()
+        
+        except:
+            # fMRI
+            pass
+        
         TIME_UNITS= 8
     
     else:
         rotation= hdr['space directions']
+        xfrm_nhdr= np.matrix(np.vstack((np.hstack((rotation.T, np.reshape(translation,(3,1)))),[0,0,0,1])))
 
 
     xfrm_nifti= SPACE2RAS @ xfrm_nhdr
