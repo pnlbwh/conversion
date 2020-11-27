@@ -25,12 +25,9 @@ def find_mf(F):
     FFT= F @ F.T
     lam, V= np.linalg.eig(FFT)
     FFTsqrt= V @ np.diag(np.sqrt(lam)) @ V.T
-    R= FFTsqrt @ F
+    R= np.linalg.inv(FFTsqrt) @ F
 
-    # get rid of scaling, normalize each column
-    R/=np.linalg.norm(R, axis=0)
-
-    return R.T
+    return R
 
 def nhdr_write(nifti, bval, bvec, nhdr):
 
@@ -121,7 +118,7 @@ type: {numpy_to_nrrd_dtype[dtype.name]}\ndimension: {dim}\nspace: right-anterior
         if bval and bvec:
 
             mf = find_mf(spc_dir)
-            print(f'measurement frame: {matrix_string(mf)}')
+            print(f'measurement frame: {matrix_string(mf.T)}')
 
             bvecs = read_bvecs(bvec, assume_normed= False)
             bvals = read_bvals(bval)
