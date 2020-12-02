@@ -22,15 +22,9 @@ def matrix_string(A):
     
 def find_mf(F):
 
-    FFT= F @ F.T
-    lam, V= np.linalg.eig(FFT)
-    FFTsqrt= V @ np.diag(np.sqrt(lam)) @ V.T
-    R= FFTsqrt @ F
-
-    # get rid of scaling, normalize each column
-    R/=np.linalg.norm(R, axis=0)
-
-    return R.T
+    R= F/np.linalg.norm(F,axis=0)
+    
+    return R
 
 def nhdr_write(nifti, bval, bvec, nhdr):
 
@@ -95,7 +89,7 @@ type: {numpy_to_nrrd_dtype[dtype.name]}\ndimension: {dim}\nspace: right-anterior
     print(f'encoding: {encoding}')
     print('space units: "mm" "mm" "mm"')
 
-    spc_orig = hdr.get_qform()[0:3, 3]
+    spc_orig = hdr.get_best_affine()[0:3, 3]
     print('space origin: ({})'.format((',').join(str(x) for x in spc_orig)))
     print(f'data file: {os.path.basename(nifti)}')
 
@@ -121,7 +115,7 @@ type: {numpy_to_nrrd_dtype[dtype.name]}\ndimension: {dim}\nspace: right-anterior
         if bval and bvec:
 
             mf = find_mf(spc_dir)
-            print(f'measurement frame: {matrix_string(mf)}')
+            print(f'measurement frame: {matrix_string(mf.T)}')
 
             bvecs = read_bvecs(bvec, assume_normed= False)
             bvals = read_bvals(bval)
