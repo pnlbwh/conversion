@@ -155,6 +155,24 @@ optional arguments:
 ```
 
 
+# Wiki
+
+1. Running tests from the correct directory
+
+`python setup.py install` will install in `miniconda3/lib/python3.*/site-packages/conversion*/`
+
+Then, if you attempt to run tests from a wrong directory:
+
+```vim
+cd conversion/conversion
+python -m unittest discover -v tests/
+```
+
+[`test_file_conversion.py`](https://github.com/pnlbwh/conversion/blob/master/conversion/tests/test_file_conversion.py) : `from conversion.tests.util import *` will determine test data file names relative to the global installation, which is unwanted when test data are modified in the staging directory! So, always follow instruction in [Tests](#tests) to run them from the correct directory.
+
+Also, beware of `discover` global import https://docs.python.org/3/library/unittest.html#test-discovery
+
+
 # Acknowledgement
 
-We sincerely acknowledge feedback provided by Chris Rorden, Steve Piper, and Isaiah Norton.
+We sincerely acknowledge feedback provided by Chris Rorden, Steve Pieper, and Isaiah Norton.
