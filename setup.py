@@ -1,12 +1,15 @@
 from setuptools import setup, find_packages
-from os.path import join as pjoin
+from os.path import join as pjoin, dirname
 from glob import glob
+import sys
+
+sys.path.append(pjoin(dirname(__file__),'conversion'))
+from _version import __version__
 
 requirements= open('requirements.txt').read().split()
-# print(requirements)
 
 setup(name='conversion',
-    version='2.2',
+    version=__version__,
     description='Python utility scripts for MRI processing',
     author='Tashrif Billah',
     author_email='tbillah@bwh.harvard.edu, tashrifbillah@gmail.com',
