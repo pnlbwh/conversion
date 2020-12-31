@@ -122,7 +122,6 @@ Out[2]:
 Upon succesful installation, you can run tests as follows:
 
 ```bash
-cd conversion
 python -m unittest discover -v conversion/tests
 ```
 
