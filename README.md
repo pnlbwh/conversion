@@ -12,6 +12,7 @@ Table of Contents
    * [Installation](#installation)
    * [Tests](#tests)
    * [Example usage](#example-usage)
+   * [Wiki](#wiki)
    * [Acknowledgement](#acknowledgement)
 
 Table of Contents created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
