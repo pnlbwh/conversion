@@ -37,7 +37,7 @@ Each of the following scripts has command line interface. Type `python script.py
 
 In addition, most of the functions can be imported in `python`.
 
-The details of file format conversion i.e. NRRD<-->NIFTI can be found [here](https://drive.google.com/open?id=10Z-qpGJugASmlx_un8M2KVOdFpYZtA9T)
+The details of file format conversion i.e. NRRD<-->NIFTI can be found [here](https://drive.google.com/file/d/10Z-qpGJugASmlx_un8M2KVOdFpYZtA9T/view?usp=sharing).
 
 
 # Citation
