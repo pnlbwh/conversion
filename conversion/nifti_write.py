@@ -16,7 +16,13 @@ np.set_printoptions(precision= PRECISION, suppress= True, floatmode= 'maxprec')
 def _space2ras(space):
     '''Find the diagonal transform required to transform space to RAS'''
 
-    positive= space.split('-')
+    if len(space)==3:
+        # short definition LPI
+        positive=[space[0],space[1],space[2]]
+
+    else:
+        # long definition left-posterior-inferior
+        positive= space.split('-')
 
     xfrm=[ ]
     if positive[0][0].lower() == 'l': # 'left'
