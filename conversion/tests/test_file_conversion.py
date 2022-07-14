@@ -3,7 +3,7 @@ import sys
 
 # sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from numpy import testing
+from numpy import testing, array
 from conversion.tests.util import *
 from nrrd import read
 from nibabel import load
@@ -37,8 +37,11 @@ class TestFileConversion(unittest.TestCase):
         testing.assert_array_equal(reference_nifti_data, converted_nifti_data)
         testing.assert_array_equal(reference_nifti_affine, converted_nifti_affine)
         testing.assert_array_equal(reference_nifti_bvals, converted_nifti_bvals)
-        testing.assert_array_equal(reference_nifti_bvecs, converted_nifti_bvecs)
-
+        for bvec_idx in range(0,len(reference_nifti_bvecs)):
+            reference_bvec = array(reference_nifti_bvecs[bvec_idx])
+            converted_bvec = array(converted_nifti_bvecs[bvec_idx])
+            testing.assert_array_almost_equal_nulp(reference_bvec,
+                                                   converted_bvec, 1)
 
     def test_nifti2nrrd(self):
 
