@@ -21,14 +21,14 @@ class TestFileConversion(unittest.TestCase):
 
         # load converted output
         converted_nifti= load(PREFIX+'.nii.gz')
-        converted_nifti_data= converted_nifti.get_data()
+        converted_nifti_data= converted_nifti.get_fdata()
         converted_nifti_affine= converted_nifti.affine
         converted_nifti_bvals= conversion.read_bvals(PREFIX+'.bval')
         converted_nifti_bvecs = conversion.read_bvecs(PREFIX+'.bvec')
 
         # load converted reference
         converted_nifti= load(CONVERTED_NIFTI)
-        reference_nifti_data= converted_nifti.get_data()
+        reference_nifti_data= converted_nifti.get_fdata()
         reference_nifti_affine= converted_nifti.affine
         reference_nifti_bvals= conversion.read_bvals(CONVERTED_BVAL)
         reference_nifti_bvecs = conversion.read_bvecs(CONVERTED_BVEC)
