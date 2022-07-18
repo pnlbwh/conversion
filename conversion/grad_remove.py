@@ -26,7 +26,7 @@ def grad_remove(imgFile, outFile, qc_bad_indices= [], interval= [], bvalFile= No
         grad_axis= 3
 
         img= nib.load(imgFile)
-        data = img.get_data()
+        data = img.get_fdata()
         if len(data.shape)!=4:
             raise AttributeError('Not a valid dwi, check dimension')
 

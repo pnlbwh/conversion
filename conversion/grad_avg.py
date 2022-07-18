@@ -25,7 +25,7 @@ def grad_avg(imgFile, outFile, bvalFile= None, bvecFile= None):
         bvecs= read_bvecs(bvecFile)
 
         img= nib.load(imgFile)
-        data = img.get_data()
+        data = img.get_fdata()
         if len(data.shape)!=4:
             raise AttributeError('Not a valid dwi, check dimension')
 

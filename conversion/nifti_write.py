@@ -74,7 +74,7 @@ def nifti_write(inImg, prefix= None):
         volume_axes.remove(grad_axis)
         rotation= hdr['space directions'][volume_axes,:3]
         
-        xfrm_nhdr= np.matrix(np.vstack((np.hstack((rotation.T, np.reshape(translation,(3,1)))),[0,0,0,1])))
+        xfrm_nhdr= np.array(np.vstack((np.hstack((rotation.T, np.reshape(translation,(3,1)))),[0,0,0,1])))
 
         # put the gradients along last axis
         if grad_axis!=3:
@@ -87,7 +87,7 @@ def nifti_write(inImg, prefix= None):
             f_vec= open(prefix+'.bvec', 'w')
             b_max = float(hdr['DWMRI_b-value'])
 
-            mf= np.matrix(np.vstack((np.hstack((hdr['measurement frame'],
+            mf= np.array(np.vstack((np.hstack((hdr['measurement frame'],
                                                 [[0],[0],[0]])),[0,0,0,1])))
             for ind in range(hdr['sizes'][grad_axis]):
                 bvec = [float(num) for num in hdr[f'DWMRI_gradient_{ind:04}'].split()]
@@ -97,7 +97,7 @@ def nifti_write(inImg, prefix= None):
                 bvec.append(1)
                 # bvecINijk= RAS2IJK @ SPACE2RAS @ mf @ np.matrix(bvec).T
                 # simplified below
-                bvecINijk= xfrm_nhdr.T @ mf @ np.matrix(bvec).T
+                bvecINijk= xfrm_nhdr.T @ mf @ np.array(bvec).T
 
                 L_2= np.linalg.norm(bvecINijk[:3])
                 if L_2:
