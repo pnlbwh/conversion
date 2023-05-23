@@ -138,6 +138,7 @@ def nifti_write(inImg, prefix= None):
     hdr_nifti['sform_code']= 2
 
     hdr_nifti['descrip']= 'NRRD-->NIFTI transform by Tashrif Billah'
+    img_nifti = nib.nifti1.Nifti1Image(data, affine=xfrm_nifti, header=hdr_nifti)
     nib.save(img_nifti, prefix+'.nii.gz')
 
 
