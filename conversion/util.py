@@ -1,5 +1,5 @@
 from os.path import isfile
-from distutils.spawn import find_executable
+from shutil import which
 
 def read_imgs_masks(file):
 
@@ -60,9 +60,9 @@ def read_cases(file):
 
 def loadExecutable(exe):
 
-    if find_executable(exe) is None:
+    if which(exe) is None:
         print(f'{exe} could not be found')
-        print(f'Set "export PATH=$PATH:path_of_{exe}" and retry')
+        print(f'Set "export PATH=$PATH:directory of {exe}" and retry')
         exit(1)
     else:
         print(f'{exe} found')
